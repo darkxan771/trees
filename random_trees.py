@@ -158,10 +158,21 @@ class PlancherelRecursiveTree(RandomTree):
         return f"Plancherel Recursive Tree with size {self.size}"
 
     def probability(self, T):
-        # TODO
-        pass
+        """
+        Returns the probability of the recursive tree T under 
+        the Plancherel distribution.
+        """
+        if T.size[0] == self.size:
+            RT = T.to_rooted_tree()
+            return RT.plancherel_measure()
+        else:
+            return 0
 
     def get_random_element(self):
+        """
+        Picks at random a recursive tree with size n, under the Plancherel
+        distribution.
+        """
         from .recursive_trees import RecursiveTree
         n = self.size
         T = RecursiveTree(max_size = n)
@@ -185,6 +196,10 @@ class UniformRecursiveTree(RandomTree):
         return f"Uniform Recursive Tree with size {self.size}"
 
     def get_random_element(self):
+        """
+        Picks at random a recursive tree with size n, under the uniform
+        distribution.
+        """
         from .recursive_trees import RecursiveTree
         n = self.size
         T = RecursiveTree(max_size = n)
@@ -208,12 +223,20 @@ class WeightedRecursiveTree(RandomTree):
         return f"Weighted Recursive Tree with size {self.size}"
 
     def probability(self, T):
+        """
+        Returns the probability of the recursive tree T under the
+        weighted distribution.
+        """
         n = T.size[0]
         num = np.prod(T.weight[T.parent[np.arange(1, n)]])
         denom = np.prod(np.cumsum([T.weight[:n-1]]))
         return num/denom
 
     def get_random_element(self):
+        """
+        Picks at random a recursive tree with size n, under the weighted
+        distribution.
+        """
         from .recursive_trees import RecursiveTree
         n = self.size 
         T = RecursiveTree(max_size = n)
