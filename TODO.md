@@ -9,3 +9,6 @@ maths:
 - expectation and limit law for the profile (at height alpha log n)
 - law of a random subtree (conditionnally to its size)
 - law of a random cut (conditionnally to its size)
+
+github:
+- write a better README

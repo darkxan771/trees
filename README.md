@@ -3,11 +3,25 @@ Python code for the generation of random rooted and recursive trees
 
 The following important classes are implemented:
 
-- RecursiveTree
 - RecursiveTrees
+- RecursiveTree
 
-- RootedTree
+```python
+T = RecursiveTree(max_size = 15)
+for i in (0, 0, 0, 0, 1, 1, 0, 4, 2, 1, 6, 1, 3, 4):
+	T.add_node(i)
+T.plot()
+```
+![A recursive tree with 15 nodes](figs/recursive_tree.jpeg)
+
 - RootedTrees
+- RootedTree
+
+```python
+T = RootedTrees(15).from_nested_list([[[[[[[[]], []], [], []], [[]], []], []]]])
+T.plot(style="circular", node_size=30)
+```
+![A rooted tree with 15 nodes](figs/rooted_tree.jpeg)
 
 - UniformRootedTree
 
