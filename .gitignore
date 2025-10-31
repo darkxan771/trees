@@ -1,2 +1,4 @@
 trees.sublime-project
 trees.sublime-workspace
+
+__pycache__/
