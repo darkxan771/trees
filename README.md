@@ -25,12 +25,21 @@ T.plot(style="circular", node_size=30)
 
 - UniformRootedTree
 
-![Random rooted tree with 5000 nodes, under the uniform distribution](figs/uniform_rooted_5000.jpeg)
+```python
+UniformRootedTree(5000).get_random_element(exact=False).plot(node_size=0, width=0.25, arrows=False)
+```
+![Random rooted tree with about 5000 nodes, under the uniform distribution](figs/uniform_rooted_5000.jpeg)
 
 - UniformRecursiveTree
 
+```python
+UniformRecursiveTree(5000).get_random_element().plot(node_size=0, width=0.1, arrows=False, labels="empty")
+```
 ![Random recursive tree with 5000 nodes, under the uniform distribution](figs/uniform_recursive_5000.jpeg)
 
 - PlancherelRecursiveTree
 
+```python
+PlancherelRecursiveTree(5000).get_random_element().plot(node_size=0, width=0.1, arrows=False, labels="empty")
+```
 ![Random recursive tree with 5000 nodes, under the Plancherel distribution](figs/plancherel_recursive_5000.jpeg)
