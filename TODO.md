@@ -1,7 +1,6 @@
 # TODO
 
 programs:
-- test_random() routine
 - RecursiveTree: method to obtain the list of pairs of indices (i,j) from a Plancherel tree
 - Crump-Mode-Jagers branching processes (new Python file)
 

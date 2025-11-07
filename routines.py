@@ -2,6 +2,7 @@ import numpy as np
 import numpy.random as rand
 from scipy.stats import poisson
 
+
 def print_graphic_options():
     graphic_options = """
         node_size (int, 300)
@@ -14,22 +15,26 @@ def print_graphic_options():
         """
     print(graphic_options)
 
+
 def code_flatten(data):
     for x in data:
         yield from x
 
-def raise_tuple(t):
+
+def raise_tuple(t: tuple):
     return tuple(x+1 for x in t)
 
+
 def nested_list_to_code(L):
-    return tuple(code_flatten([(0,)] 
+    return tuple(code_flatten([(0,)]
                  + [raise_tuple(nested_list_to_code(c)) for c in L]))
+
 
 def code_to_nested_list(L):
     res = []
     if (not (L[0] == 0)):
         raise ValueError
-    if len(L)>1:
+    if len(L) > 1:
         child = [0]
         for i in range(2, len(L)):
             if L[i] == 1:
@@ -40,6 +45,7 @@ def code_to_nested_list(L):
         res.append(code_to_nested_list(child))
     return res
 
+
 def standardisation(L):
     n = L.size
     res = np.ones(n, dtype=int)
@@ -49,13 +55,15 @@ def standardisation(L):
             res[k] += int(L[j] < L[k])
     return res
 
-def random_pairs(n):
-    alea_w = (np.arange(1, n) + np.arange(1, n)**2) * rand.random(size = n-1)
+
+def random_pairs(n: int):
+    alea_w = (np.arange(1, n) + np.arange(1, n)**2) * rand.random(size=n-1)
     w = np.floor(np.sqrt(alea_w + 0.25) + 0.5)
     J = 1 + rand.randint(w)
     return (w.astype(int), J)
 
-def permutation_to_code(p):
+
+def permutation_to_code(p: np.ndarray):
     """
     Converts a permutation array to a code array.
     """
@@ -64,7 +72,8 @@ def permutation_to_code(p):
         res[i] = np.count_nonzero(p[:i] < p[i])
     return res
 
-def code_to_permutation(c):    
+
+def code_to_permutation(c: np.ndarray):
     """
     Converts a code array to a permutation array.
     """
@@ -74,7 +83,8 @@ def code_to_permutation(c):
         res[:i] += (res[:i] >= res[i])
     return res
 
-def poisson_galton_watson(mu):
+
+def poisson_galton_watson(mu: float):
     """
     Returns the data required to create a Galton-Watson tree
     with offspring distribution Poisson(mu).
@@ -83,4 +93,3 @@ def poisson_galton_watson(mu):
     subs = [poisson_galton_watson(mu) for _ in range(xi)]
     size = 1 + sum([c[0] for c in subs])
     return size, subs
-    
