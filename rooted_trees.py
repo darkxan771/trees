@@ -1,10 +1,8 @@
 import numpy as np
-import numpy.random as rand
 
 from scipy.special import factorial
 from collections import defaultdict
-from sympy import divisors
-from .routines import code_flatten, raise_tuple, code_to_nested_list
+from .routines import c_flatten, raise_tuple, code_to_nested_list
 from .random_trees import UniformRootedTree
 
 
@@ -13,6 +11,7 @@ class RootedTree:
     A rooted tree is a (possibly empty) multiset of rooted
     trees, which are connected to a common root vertex.
     """
+
     def __init__(self, children: list = []):
         self.children = list(children)
         self.children.sort(key=(lambda x: x.code), reverse=True)
@@ -26,7 +25,7 @@ class RootedTree:
         return hash(self.code)
 
     def __eq__(self, other):
-        return (isinstance(other, RootedTree) and (self.code == other.code))
+        return isinstance(other, RootedTree) and (self.code == other.code)
 
     ###############
     # Conversions #
@@ -39,8 +38,11 @@ class RootedTree:
 
         It is a tuple of integers which uniquely identifies the tree.
         """
-        return tuple(code_flatten([(0,)] + [raise_tuple(child.code) for child
-                                            in self.children]))
+        return tuple(
+            c_flatten(
+                [(0,)] + [raise_tuple(child.code) for child in self.children]
+            )
+        )
 
     def to_nested_list(self):
         """
@@ -48,13 +50,13 @@ class RootedTree:
         """
         return [child.to_nested_list() for child in self.children]
 
-    def _insert_in_recursive_tree(self, T, d: int,
-                                  mini: int, maxi: int):
+    def _insert_in_recursive_tree(self, T, d: int, mini: int, maxi: int):
         sizes = [c.size for c in self.children]
-        if (not maxi - mini == sum(sizes) + 1):
+        if not maxi - mini == sum(sizes) + 1:
             raise ValueError
-        T.children[mini] = (mini + 1
-                            + np.cumsum(np.array([0] + sizes))[:-1]).tolist()
+        T.children[mini] = (
+            mini + 1 + np.cumsum(np.array([0] + sizes))[:-1]
+        ).tolist()
         T.weight[mini] = 1
         T.depth[mini] = d
         T.size[mini] = maxi - mini
@@ -63,7 +65,7 @@ class RootedTree:
             for c in self.children:
                 maxi2 = mini2 + c.size
                 T.parent[mini2] = mini
-                c._insert_in_recursive_tree(T, d+1, mini2, maxi2)
+                c._insert_in_recursive_tree(T, d + 1, mini2, maxi2)
                 mini2 = maxi2
 
     def to_recursive_tree(self):
@@ -73,6 +75,7 @@ class RootedTree:
         possibilities.
         """
         from .recursive_trees import RecursiveTree
+
         T = RecursiveTree(max_size=self.size)
         self._insert_in_recursive_tree(T, 0, 0, self.size)
         T.random_relabelling()
@@ -108,7 +111,7 @@ class RootedTree:
         Returns the number of increasing labellings of the tree.
         """
         T = self.to_recursive_tree()
-        return int(factorial(self.size) / np.prod(T.size[:self.size]))
+        return int(factorial(self.size) / np.prod(T.size[: self.size]))
 
     def sym(self):
         """
@@ -136,16 +139,18 @@ class RootedTree:
         Returns the Plancherel measure of the rooted tree.
         """
         num = self.d() * self.u()
-        denum = np.prod(np.array([(i*(i+1)/2)
-                                  for i in range(1, self.size + 1)]))
+        denum = np.prod(
+            np.array([(i * (i + 1) / 2) for i in range(1, self.size + 1)])
+        )
         return float(num / denum)
 
     #################
     # Visualisation #
     #################
 
-    def plot(self, style: str = "centered",
-             with_circles: bool = False, **kwargs):
+    def plot(
+        self, style: str = "centered", with_circles: bool = False, **kwargs
+    ):
         """
         Plots the rooted tree.
         """
@@ -172,7 +177,7 @@ class _RootedTreesIterator:
             p = np.argwhere(self.current > 1)[-1][0]
             q = np.argwhere(self.current[:p] == self.current[p] - 1)[-1][0]
             for i in range(p, self.order):
-                self.current[i] = self.current[i-(p-q)]
+                self.current[i] = self.current[i - (p - q)]
         return res
 
 
@@ -180,6 +185,7 @@ class RootedTrees:
     """
     A container for rooted (unlabelled) trees with a given size n.
     """
+
     def __init__(self, n):
         self.order = n
 
@@ -190,7 +196,7 @@ class RootedTrees:
         return _RootedTreesIterator(self.order)
 
     def __contains__(self, el):
-        return (isinstance(el, RootedTree) and el.size == self.order)
+        return isinstance(el, RootedTree) and el.size == self.order
 
     def cardinality(self):
         """
@@ -202,6 +208,7 @@ class RootedTrees:
         = 1/n sum([d * C[d] * C[n-k+1] for k in 1..n and for d | k]).
         """
         from .boltzmann import generating_series_T
+
         return int(generating_series_T(self.order)[-1])
 
     def from_code(self, L):
@@ -211,8 +218,9 @@ class RootedTrees:
         return self.from_nested_list(code_to_nested_list(L))
 
     def _from_nested_list_without_checking(self, L):
-        return RootedTree([RootedTrees(0)._from_nested_list_without_checking(k)
-                           for k in L])
+        return RootedTree(
+            [RootedTrees(0)._from_nested_list_without_checking(k) for k in L]
+        )
 
     def from_nested_list(self, L, check=True):
         """

@@ -16,23 +16,24 @@ def print_graphic_options():
     print(graphic_options)
 
 
-def code_flatten(data):
+def c_flatten(data):
     for x in data:
         yield from x
 
 
 def raise_tuple(t: tuple):
-    return tuple(x+1 for x in t)
+    return tuple(x + 1 for x in t)
 
 
 def nested_list_to_code(L):
-    return tuple(code_flatten([(0,)]
-                 + [raise_tuple(nested_list_to_code(c)) for c in L]))
+    return tuple(
+        c_flatten([(0,)] + [raise_tuple(nested_list_to_code(c)) for c in L])
+    )
 
 
 def code_to_nested_list(L):
     res = []
-    if (not (L[0] == 0)):
+    if not (L[0] == 0):
         raise ValueError
     if len(L) > 1:
         child = [0]
@@ -57,7 +58,7 @@ def standardisation(L):
 
 
 def random_pairs(n: int):
-    alea_w = (np.arange(1, n) + np.arange(1, n)**2) * rand.random(size=n-1)
+    alea_w = (np.arange(1, n) + np.arange(1, n) ** 2) * rand.random(size=n - 1)
     w = np.floor(np.sqrt(alea_w + 0.25) + 0.5)
     J = 1 + rand.randint(w)
     return (w.astype(int), J)
@@ -80,7 +81,7 @@ def code_to_permutation(c: np.ndarray):
     res = np.zeros(c.size, dtype=int)
     for i in range(1, len(c)):
         res[i] = c[i]
-        res[:i] += (res[:i] >= res[i])
+        res[:i] += res[:i] >= res[i]
     return res
 
 
