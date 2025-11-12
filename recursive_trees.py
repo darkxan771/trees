@@ -5,12 +5,19 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import seaborn as sns
 
-
+from typing import Callable
 from matplotlib.patches import Circle
 from matplotlib.axes._axes import Axes
 from .routines import standardisation, code_to_permutation
 
 sns.set_theme()
+
+
+extract_statistic: dict[str, Callable] = {
+    "degree": (lambda T: T.degrees()),
+    "depth": (lambda T: T.depth[: T.size[0]]),
+    "size": (lambda T: T.size[: T.size[0]]),
+}
 
 
 class RecursiveTree:
@@ -32,6 +39,7 @@ class RecursiveTree:
       particular, T.depth[0] = 0.
     - T.children[i] contains the list of the children of the node i.
 
+    Additional information can be stocked in T.additional.
     """
 
     def __init__(self, max_size: int = 10**6):
@@ -45,6 +53,7 @@ class RecursiveTree:
         self.children = np.empty(max_size, dtype=object)
         self.children[0] = []
         self.limit = max_size
+        self.additional = {}
 
     def __repr__(self):
         return "Recursive tree with size " + str(self.size[0])
@@ -208,20 +217,11 @@ class RecursiveTree:
             w = self.weight[:n] / np.sum(self.weight[:n])
         else:
             w = np.ones(n) / n
-        if statistic == "degree":
-            res = np.zeros(max(self.degrees()) + 1, dtype=float)
-            for i in range(n):
-                res[len(self.children[i])] += w[i]
-        elif statistic == "depth":
-            res = np.zeros(self.height() + 1, dtype=float)
-            for i in range(n):
-                res[self.depth[i]] += w[i]
-        elif statistic == "size":
-            res = np.zeros(self.size[0] + 1, dtype=float)
-            for i in range(n):
-                res[self.size[i]] += w[i]
-        else:
-            res = np.zeros(1, dtype=float)
+        data = extract_statistic[statistic](self)
+        M = max(data)
+        res = np.zeros(M + 1, dtype=float)
+        for d in range(M + 1):
+            res[d] = np.sum((data == d) * w)
         return res
 
     def mean(
@@ -502,56 +502,6 @@ class RecursiveTree:
             ax.set_title(f"Distribution of the {S} of a random node")
         plt.show()
 
-    def _angles(self) -> np.ndarray:
-        n = self.size[0]
-        angle_min = np.zeros(n, dtype=float)
-        angle_max = np.zeros(n, dtype=float)
-        angle_max[0] = 2 * np.pi
-        for i in range(1, n):
-            p = self.parent[i]
-            j = list(self.children[p]).index(i)
-            denom = self.size[p] - 1
-            tmin = sum(self.size[k] for k in self.children[p][:j]) / denom
-            tmax = sum(self.size[k] for k in self.children[p][: j + 1]) / denom
-            if p == 0:
-                angle_min[i] = tmin * 2 * np.pi
-                angle_max[i] = tmax * 2 * np.pi
-            else:
-                span = angle_max[p] - angle_min[p]
-                angle_min[i] = angle_min[p] + (0.1 + 0.8 * tmin) * span
-                angle_max[i] = angle_min[p] + (0.1 + 0.8 * tmax) * span
-        return (angle_min + angle_max) / 2
-
-    def layout(self, style: str = "centered"):
-        """
-        Computes a layout for the drawing of the tree.
-        """
-        n = self.size[0]
-        D = self.depth
-        profile = self.profile()
-        positions = self.row_positions()
-        if style == "centered":
-            return {
-                i: np.array([-(profile[D[i]] + 1) / 2 + positions[i], D[i]])
-                for i in range(n)
-            }
-        if style == "left-aligned":
-            return {i: np.array([positions[i], D[i]]) for i in range(n)}
-        if style in ["circular", "log-circular"]:
-            if style == "log-circular":
-                rad = np.log(1 + D[:n])
-            else:
-                rad = D[:n]
-            ang = self._angles()
-            return {
-                i: np.array([rad[i] * np.cos(ang[i]), rad[i] * np.sin(ang[i])])
-                for i in range(n)
-            }
-        if style == "natural":
-            Tn = self.to_networkx()
-            pos0 = self.layout("circular")
-            return nx.spring_layout(Tn, pos=pos0, k=0.1, iterations=300)
-
     def draw_on_ax(
         self,
         ax0: Axes,
@@ -563,25 +513,20 @@ class RecursiveTree:
         """
         Draws the tree on a Matplotlib Axes object.
         """
+        from .draw_helpers import compute_layouts, compute_labels
+
         T = self.to_networkx()
         ax0.set_axis_off()
-        n = self.size[0]
-        edge_c = (0.8, 0.8, 0.8)
-        pos0 = self.layout(style)
         if with_circles:
+            edge_c = (0.8, 0.8, 0.8)
             for i in range(self.height() + 1):
                 ax0.add_patch(Circle((0, 0), i, fill=False, edgecolor=edge_c))
+        n = self.size[0]
+        pos0 = compute_layouts[style](self)
         if labels == "empty":
             nx.draw_networkx(T, ax=ax0, pos=pos0, with_labels=False, **kwargs)
-        if labels == "simple":
-            nx.draw_networkx(T, ax=ax0, pos=pos0, **kwargs)
-        if labels == "with_weights" or labels == "double":
-            L = {i: str(i) for i in range(n)}
-            for i in range(n):
-                if labels == "with_weights":
-                    L[i] += ":" + str(int(self.weight[i]))
-                else:
-                    L[i] += "|" + str(int(n - self.weight[i]))
+        else:
+            L = compute_labels[labels](self)
             nx.draw_networkx(T, ax=ax0, pos=pos0, labels=L, **kwargs)
 
     def plot(

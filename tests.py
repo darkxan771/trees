@@ -93,7 +93,7 @@ def test_random():
     PT.plot()
 
 
-def test_subtree_plancherel(N, K):
+def test_subtree_plancherel(N: int, K: int) -> bool:
     """
     Tests if, conditionally to being of size K, a random subtree
     of a Plancherel recursive tree with order N is also
@@ -113,3 +113,33 @@ def test_subtree_plancherel(N, K):
                 nums[U.subtree(k).to_code()] += p
     d = {code: nums[code] / denom for code in nums}
     return all(np.isclose(d[c], dplancherel[c]) for c in d)
+
+
+def test_subtree_double_recursive(
+    N: int, K: int, with_weights: bool = False
+) -> bool:
+    """
+    Tests if, conditionally to being of size K, a random double
+    recursive tree of a uniformly distributed double recursive tree
+    with size N is also uniformly distributed.
+    """
+    nums = {
+        (T.to_code(), tuple(T.weight[:K])): float(0)
+        for T in RecursiveTrees_n(K, double=True)
+    }
+    denom = float(0)
+    for U in RecursiveTrees_n(N, double=True):
+        if with_weights:
+            denom += float(np.sum((U.size[:N] == K) * U.weight[:N]))
+        else:
+            denom += float(np.sum(U.size[:N] == K))
+        for k in range(N):
+            if U.size[k] == K:
+                T = U.subtree(k, normalise_weights=True)
+                if with_weights:
+                    nums[(T.to_code(), tuple(T.weight[:K]))] += U.weight[k]
+                else:
+                    nums[(T.to_code(), tuple(T.weight[:K]))] += 1
+    d = {code: nums[code] / denom for code in nums}
+    p = float(1 / RecursiveTrees_n(K, True).cardinality())
+    return all(np.isclose(d[c], p) for c in d)

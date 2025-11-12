@@ -6,11 +6,13 @@ from .random_trees import (
     UniformRecursiveTree,
     UniformRootedTree,
 )
+from .crump_jagers_mode import CrumpJagersMode, PoissonPointProcess
 from .tests import (
     test_recursive,
     test_rooted,
     test_random,
     test_subtree_plancherel,
+    test_subtree_double_recursive,
 )
 
 
@@ -22,10 +24,13 @@ __all__ = [
     "PlancherelRecursiveTree",
     "UniformRecursiveTree",
     "UniformRootedTree",
+    "CrumpJagersMode",
+    "PoissonPointProcess",
     "test_recursive",
     "test_rooted",
     "test_random",
     "test_subtree_plancherel",
+    "test_subtree_double_recursive",
 ]
 
 

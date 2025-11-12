@@ -1,6 +1,6 @@
 import numpy as np
 import numpy.random as rand
-from scipy.stats import poisson
+from scipy.stats import poisson, uniform
 
 
 def c_flatten(data):
@@ -81,3 +81,13 @@ def poisson_galton_watson(mu: float) -> tuple[int, list]:
     subs = [poisson_galton_watson(mu) for _ in range(xi)]
     size = 1 + sum([c[0] for c in subs])
     return size, subs
+
+
+def poisson_cloud(T: float, L: float = 1):
+    """
+    Returns a Poisson point process on [0,T] with intensity L.
+    """
+    K = poisson(L * T).rvs()
+    U = uniform(scale=T).rvs(size=K)
+    U.sort()
+    return U
