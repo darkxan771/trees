@@ -5,11 +5,10 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import seaborn as sns
 
-from scipy.special import factorial
+
 from matplotlib.patches import Circle
-from .rooted_trees import RootedTree
-from .routines import standardisation, code_to_permutation, permutation_to_code
-from .random_trees import PlancherelRecursiveTree, UniformRecursiveTree
+from matplotlib.axes._axes import Axes
+from .routines import standardisation, code_to_permutation
 
 sns.set_theme()
 
@@ -58,7 +57,7 @@ class RecursiveTree:
         B = self.to_code() == other.to_code()
         return A and B
 
-    def first_columns(self, d: int = 0):
+    def first_columns(self, d: int = 0) -> pd.DataFrame:
         """
         Returns the d first columns of the array encoding the recursive tree.
         """
@@ -83,14 +82,14 @@ class RecursiveTree:
     # Conversions #
     ###############
 
-    def to_code(self):
+    def to_code(self) -> tuple:
         """
         Returns the code of the recursive tree (list of the nodes of
         attachment).
         """
         return tuple(self.parent[1:].tolist())
 
-    def to_permutation(self):
+    def to_permutation(self) -> tuple:
         """
         Returns the permutation of the recursive tree, obtained via one of
         the bijection from recursive trees with size n to permutations with
@@ -98,7 +97,7 @@ class RecursiveTree:
         """
         return tuple((code_to_permutation(self.parent[1:])).tolist())
 
-    def to_networkx(self):
+    def to_networkx(self) -> nx.classes.digraph.DiGraph:
         """
         Encodes the tree in a NetworkX labelled digraph.
         """
@@ -109,36 +108,37 @@ class RecursiveTree:
             T.nodes[i]["weight"] = self.weight[i]
         return T
 
-    def to_rooted_tree(self):
+    def to_nested_list(self) -> list:
         """
-        Forgets the labels and weights and returns the rooted tree structure.
+        Forgets the labels and weights and returns the nested list structure
+        (which can then be converted to a rooted tree).
         """
         subs = self.children[0]
-        return RootedTree([self.subtree(c).to_rooted_tree() for c in subs])
+        return [self.subtree(c).to_nested_list() for c in subs]
 
     ###################################
     # Extract statistical information #
     ###################################
 
-    def number_of_edges(self):
+    def number_of_edges(self) -> int:
         """
         Returns the number of edges of the tree.
         """
-        return self.size[0] - 1
+        return int(self.size[0] - 1)
 
-    def number_of_vertices(self):
+    def number_of_vertices(self) -> int:
         """
         Returns the size of the tree (number of vertices).
         """
-        return self.size[0]
+        return int(self.size[0])
 
-    def height(self):
+    def height(self) -> int:
         """
         Returns the height of the tree (maximal depth of a node).
         """
-        return np.max(self.depth)
+        return int(np.max(self.depth))
 
-    def profile(self):
+    def profile(self) -> np.ndarray:
         """
         Returns the profile of the tree (number of nodes on each level).
         """
@@ -147,13 +147,13 @@ class RecursiveTree:
             [np.count_nonzero(self.depth == d) for d in range(h + 1)]
         )
 
-    def degrees(self):
+    def degrees(self) -> np.ndarray:
         """
         Returns the degrees of the nodes of the tree.
         """
         return np.vectorize(lambda L: len(L))(self.children[: self.size[0]])
 
-    def path_to_root(self, k: int):
+    def path_to_root(self, k: int) -> np.ndarray:
         """
         Returns the unique path from the root to k.
         """
@@ -163,7 +163,7 @@ class RecursiveTree:
             res[-i - 2] = self.parent[res[-i - 1]]
         return res
 
-    def subtree_indices(self, k: int):
+    def subtree_indices(self, k: int) -> list[int]:
         """
         Returns the set of indices in the subtree based at k.
         """
@@ -171,7 +171,7 @@ class RecursiveTree:
         L.sort()
         return L
 
-    def row_positions(self):
+    def row_positions(self) -> np.ndarray:
         """
         Returns an array with the row positions of the nodes.
         """
@@ -190,7 +190,7 @@ class RecursiveTree:
 
     def distribution(
         self, statistic: str = "degree", with_weights: bool = False
-    ):
+    ) -> np.ndarray:
         """
         Computes the distribution of a statistic of the nodes of the tree.
 
@@ -224,34 +224,69 @@ class RecursiveTree:
             res = np.zeros(1, dtype=float)
         return res
 
-    def mean(self, statistic: str = "degree", with_weights: bool = False):
+    def mean(
+        self, statistic: str = "degree", with_weights: bool = False
+    ) -> float:
         """
         Computes the mean of a statistic of the nodes of the tree.
         """
         dist = self.distribution(statistic, with_weights)
-        return np.sum(dist * np.arange(dist.size))
+        return float(np.sum(dist * np.arange(dist.size)))
 
-    def var(self, statistic: str = "degree", with_weights: bool = False):
+    def var(
+        self, statistic: str = "degree", with_weights: bool = False
+    ) -> float:
         """
         Computes the variance of a statistic of the nodes of the tree.
         """
         dist = self.distribution(statistic, with_weights)
         EX2 = np.sum(dist * np.arange(dist.size) ** 2)
         EX = np.sum(dist * np.arange(dist.size))
-        return EX2 - EX**2
+        return float(EX2 - EX**2)
+
+    def is_double_recursive(self) -> bool:
+        """
+        Checks whether the tree is double recursive (i.e.,
+        its set of weights is [1, n] and the weights are
+        decreasing.
+        """
+        n = self.size[0]
+        if np.all(np.sort(self.weight[:n]) == np.arange(1, n + 1)):
+            return bool(
+                np.all(self.weight[self.parent[1:n]] > self.weight[1:n])
+            )
+        else:
+            return False
+
+    def extract_KP_insertion_array(self) -> np.ndarray:
+        """
+        If the recursive tree is double recursive, returns the
+        corresponding Kuba-Panholzer insertion array.
+        """
+        if not self.is_double_recursive():
+            raise ValueError
+        else:
+            n = self.size[0]
+            res = np.zeros((2, n - 1), dtype=int)
+            W = self.weight[:n].copy()
+            for i in range(1, n):
+                J = W[n - i]
+                res[:, n - i - 1] = np.array([W[self.parent[n - i]] - 1, J])
+                W[: n - i] -= W[: n - i] >= J
+            return res
 
     ##############################
     # Modifications / insertions #
     ##############################
 
-    def map_weights(self, func):
+    def map_weights(self, func) -> None:
         """
         Maps a function on the set of weights.
         """
         n = self.size[0]
         self.weight[:n] = np.vectorize(func)(self.weight[:n])
 
-    def add_node(self, parent_label: int, **kwargs):
+    def add_node(self, parent_label: int, **kwargs) -> None:
         """
         Adds a node with label (n = size of the tree) as a child of
         (i = parent_label).
@@ -276,9 +311,10 @@ class RecursiveTree:
         else:
             self.weight[n] = 1
 
-    def KP_insertion(self, i: int, J: int):
+    def KP_insertion(self, i: int, J: int) -> None:
         """
-        Realises the Kuba-Panholzer insertion at node i and with weight J.
+        Realises the Kuba-Panholzer insertion at node i, with a new
+        weight equal to J.
 
         The rules are as follows:
         - if the existing tree has size n,  we add the node with label n
@@ -288,7 +324,18 @@ class RecursiveTree:
         """
         self.add_node(i, map_weights=(lambda x: x + int(x >= J)), new_weight=J)
 
-    def subtree(self, k: int, normalise_weights: bool = False):
+    def KP_insertion_at_weight(self, i: int, J: int) -> None:
+        """
+        Realises the Kuba-Panholzer insertion at the node with weight i,
+        with a new weight equal to J.
+        """
+        n = self.size[0]
+        p = np.argwhere(self.weight[:n] == i)[0][0]
+        self.KP_insertion(p, J)
+
+    def subtree(
+        self, k: int, normalise_weights: bool = False
+    ) -> "RecursiveTree":
         """
         Returns the recursive subtree based at k.
 
@@ -312,7 +359,7 @@ class RecursiveTree:
             T.weight = standardisation(T.weight)
         return T
 
-    def cut(self, k: int, normalise_weights: bool = False):
+    def cut(self, k: int, normalise_weights: bool = False) -> "RecursiveTree":
         """
         Removes the subtree based at k, and renormalises the labels.
 
@@ -347,7 +394,7 @@ class RecursiveTree:
     # Random objects #
     ##################
 
-    def random_node(self, with_weights: bool = False):
+    def random_node(self, with_weights: bool = False) -> int:
         """
         Picks a random node of the tree.
 
@@ -363,7 +410,7 @@ class RecursiveTree:
 
     def random_subtree(
         self, with_weights: bool = False, normalise_weights: bool = False
-    ):
+    ) -> "RecursiveTree":
         """
         Picks a random node and returns the corresponding recursive subtree.
 
@@ -376,7 +423,7 @@ class RecursiveTree:
 
     def random_cut(
         self, with_weights: bool = False, normalise_weights: bool = False
-    ):
+    ) -> "RecursiveTree":
         """
         Picks a random node and returns the corresponding cut.
 
@@ -387,7 +434,7 @@ class RecursiveTree:
         k = self.random_node(with_weights)
         return self.cut(k, normalise_weights)
 
-    def random_leaf(self, subtree: list = []):
+    def random_leaf(self, subtree: list = []) -> int:
         """
         Picks a leaf at random according to the hook algorithm.
 
@@ -404,7 +451,7 @@ class RecursiveTree:
             L = [k for k in self.subtree_indices(r) if k in Ind]
         return int(L[0])
 
-    def random_relabelling(self):
+    def random_relabelling(self) -> None:
         """
         Relabels the nodes of the tree, by choosing uniformly at random
         among all the possible increasing labellings of the underlying
@@ -439,7 +486,7 @@ class RecursiveTree:
         statistic: str = "degree",
         with_weights: bool = False,
         limit: int = 10**100,
-    ):
+    ) -> None:
         """
         Plots the histogram of the distribution of a statistic of the nodes.
         """
@@ -455,7 +502,7 @@ class RecursiveTree:
             ax.set_title(f"Distribution of the {S} of a random node")
         plt.show()
 
-    def _angles(self):
+    def _angles(self) -> np.ndarray:
         n = self.size[0]
         angle_min = np.zeros(n, dtype=float)
         angle_max = np.zeros(n, dtype=float)
@@ -507,12 +554,12 @@ class RecursiveTree:
 
     def draw_on_ax(
         self,
-        ax0,
+        ax0: Axes,
         style: str = "centered",
         labels: str = "simple",
         with_circles: bool = False,
         **kwargs,
-    ):
+    ) -> None:
         """
         Draws the tree on a Matplotlib Axes object.
         """
@@ -543,7 +590,7 @@ class RecursiveTree:
         labels: str = "simple",
         with_circles: bool = False,
         **kwargs,
-    ):
+    ) -> None:
         """
         Plots the recursive tree.
 
@@ -559,78 +606,3 @@ class RecursiveTree:
             ax0.set_aspect(1)
         self.draw_on_ax(ax0, style, labels, with_circles, **kwargs)
         plt.show()
-
-
-class _RecursiveTreesIterator:
-    def __init__(self, n):
-        self.order = n
-        self.current = np.zeros(n - 1, dtype=int)
-        self.finished = False
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self.finished:
-            raise StopIteration
-        res = RecursiveTrees(self.order).from_code(self.current)
-        test = np.argwhere(self.current < np.arange(self.order - 1))
-        if test.size == 0:
-            self.finished = True
-        else:
-            i = test[-1][0]
-            self.current[i] += 1
-            self.current[i + 1 :] = np.zeros(self.order - i - 2, dtype=int)
-        return res
-
-
-class RecursiveTrees:
-    """
-    A container for recursive trees with a given size n.
-    """
-
-    def __init__(self, n):
-        self.order = n
-
-    def __repr__(self):
-        return f"Recursive trees with size {self.order}"
-
-    def __iter__(self):
-        return _RecursiveTreesIterator(self.order)
-
-    def __contains__(self, el):
-        return isinstance(el, RecursiveTree) and (el.size[0] == self.order)
-
-    def cardinality(self):
-        """
-        Returns the cardinality of the set of recursive trees with size n,
-        which is equal to (n-1)!.
-        """
-        return factorial(self.order - 1, True)
-
-    def from_permutation(self, p):
-        """
-        Constructs the unique recursive tree with size n corresponding to
-        the permutation p.
-        """
-        return self.from_code(permutation_to_code(np.array(p)))
-
-    def from_code(self, c):
-        """
-        Construct the unique recursive tree with size n corresponding to
-        the code c.
-        """
-        res = RecursiveTree(max_size=self.order)
-        for i in c:
-            res.add_node(i)
-        return res
-
-    def get_random_element(self, distribution="uniform"):
-        """
-        Picks a recursive tree at random. Available distributions are:
-        "uniform", "plancherel".
-        """
-        if distribution == "uniform":
-            return UniformRecursiveTree(self.order).get_random_element()
-        if distribution == "plancherel":
-            return PlancherelRecursiveTree(self.order).get_random_element()

@@ -2,8 +2,11 @@ import numpy as np
 import numpy.random as rand
 import scipy.stats as scs
 
+from .recursive_trees import RecursiveTree
+from .rooted_trees import RootedTree
 from .routines import random_pairs, poisson_galton_watson
-from itertools import islice
+from .boltzmann import compute_values, find_x_for_n
+
 from scipy.special import factorial
 
 
@@ -24,15 +27,14 @@ class RandomTree:
         """
         The support of the distribution of random trees.
         """
-        from .recursive_trees import RecursiveTrees
-        from .rooted_trees import RootedTrees
+        from .containers import RecursiveTrees_n, RootedTrees_n
 
         if self.type == "recursive":
-            return RecursiveTrees(self.size)
+            return RecursiveTrees_n(self.size)
         else:
-            return RootedTrees(self.size)
+            return RootedTrees_n(self.size)
 
-    def probability(self, T):
+    def probability(self, T) -> float:
         """
         Returns the probability of the tree T under
         the distribution considered.
@@ -40,15 +42,7 @@ class RandomTree:
         if T in self.container():
             return float(1 / self.container().cardinality())
         else:
-            raise ValueError
-
-    def get_random_element(self):
-        """
-        Picks at random a tree in the support of the distribution.
-        """
-        K = self.container().cardinality()
-        n = rand.randint(K)
-        return next(islice(self.container(), n, None))
+            return float(0)
 
 
 class UniformRootedTree(RandomTree):
@@ -63,9 +57,9 @@ class UniformRootedTree(RandomTree):
     def __repr__(self):
         return f"Uniform Rooted Tree with size {self.size}"
 
-    def _sampler_with_precomputed(self, values, i: int, pointed: bool = False):
-        from .rooted_trees import RootedTree
-
+    def _sampler_with_precomputed(
+        self, values, i: int, pointed: bool = False
+    ) -> RootedTree:
         div_range = range(1, 50 // i + 1)
         N = [0] + [scs.poisson(values[k * i] / k).rvs() for k in div_range]
         res = []
@@ -79,9 +73,7 @@ class UniformRootedTree(RandomTree):
                 res += [self._sampler_with_precomputed(values, k * i)] * k
         return RootedTree(res)
 
-    def _reconstruct(self, s: int, GW: list, other_trees: list):
-        from .rooted_trees import RootedTree
-
+    def _reconstruct(self, s: int, GW: list, other_trees: list) -> RootedTree:
         trees = other_trees[0]
         S = [c[0] for c in GW]
         cuts = np.cumsum(np.array([1] + S))
@@ -90,7 +82,7 @@ class UniformRootedTree(RandomTree):
         trees += [self._reconstruct(S[i], GW[i][1], CT[i]) for i in range(L)]
         return RootedTree(trees)
 
-    def boltzmann_sampler(self, x: float, pointed: bool = False):
+    def boltzmann_sampler(self, x: float, pointed: bool = False) -> RootedTree:
         """
         Picks at random a rooted unlabelled tree.
 
@@ -102,12 +94,10 @@ class UniformRootedTree(RandomTree):
         generating series of the species of cycle-pointed rooted unlabelled
         trees. This reduces the variance of the size of T.
         """
-        from .boltzmann import compute_values
-
         values = compute_values(x)
         return self._sampler_with_precomputed(values, 1, pointed)
 
-    def get_random_element(self, exact: bool = True):
+    def get_random_element(self, exact: bool = True) -> RootedTree:
         """
         Picks at random a rooted unlabelled tree with size n.
 
@@ -116,16 +106,13 @@ class UniformRootedTree(RandomTree):
         of the tree is uniform over the set of rooted unlabelled trees with
         size N.
         """
-        from .rooted_trees import RootedTree
-
-        if self.size == 1:
+        n = self.size
+        if n == 1:
             return RootedTree([])
-        elif self.size == 2:
+        elif n == 2:
             return RootedTree([RootedTree([])])
         else:
-            from .boltzmann import find_x_for_n, compute_values
-
-            x = find_x_for_n(self.size, True)
+            x = find_x_for_n(n, True)
             values = compute_values(x)
             test = True
             s, GW = 1, []
@@ -156,11 +143,8 @@ class UniformRootedTree(RandomTree):
                     T = self._sampler_with_precomputed(values, K)
                     S += T.size * K
                     other_trees[0] += [T] * K
-                if exact and (S == self.size):
+                if ((not exact) and 0.9 < S / n < 1.1) or (S == n):
                     test = False
-                if (not exact) and (0.9 < S / self.size < 1.1):
-                    test = False
-                    print(S)
             return self._reconstruct(s, GW, other_trees)
 
 
@@ -172,7 +156,7 @@ class PlancherelRecursiveTree(RandomTree):
     def __repr__(self):
         return f"Plancherel Recursive Tree with size {self.size}"
 
-    def probability(self, T):
+    def probability(self, T) -> float:
         """
         Returns the probability of the recursive tree T under
         the Plancherel distribution.
@@ -184,15 +168,13 @@ class PlancherelRecursiveTree(RandomTree):
             )
             return float(num / denum)
         else:
-            raise ValueError
+            return float(0)
 
-    def get_random_element(self):
+    def get_random_element(self) -> RecursiveTree:
         """
         Picks at random a recursive tree with size n, under the Plancherel
         distribution.
         """
-        from .recursive_trees import RecursiveTree
-
         n = self.size
         T = RecursiveTree(max_size=n)
         L = [0]
@@ -214,13 +196,11 @@ class UniformRecursiveTree(RandomTree):
     def __repr__(self):
         return f"Uniform Recursive Tree with size {self.size}"
 
-    def get_random_element(self):
+    def get_random_element(self) -> RecursiveTree:
         """
         Picks at random a recursive tree with size n, under the uniform
         distribution.
         """
-        from .recursive_trees import RecursiveTree
-
         n = self.size
         T = RecursiveTree(max_size=n)
         for k in range(1, n):
@@ -242,7 +222,7 @@ class WeightedRecursiveTree(RandomTree):
     def __repr__(self):
         return f"Weighted Recursive Tree with size {self.size}"
 
-    def probability(self, T):
+    def probability(self, T) -> float:
         """
         Returns the probability of the recursive tree T under the
         weighted distribution.
@@ -253,15 +233,13 @@ class WeightedRecursiveTree(RandomTree):
             denom = np.prod(np.cumsum([T.weight[: n - 1]]))
             return float(num / denom)
         else:
-            raise ValueError
+            return float(0)
 
-    def get_random_element(self):
+    def get_random_element(self) -> RecursiveTree:
         """
         Picks at random a recursive tree with size n, under the weighted
         distribution.
         """
-        from .recursive_trees import RecursiveTree
-
         n = self.size
         T = RecursiveTree(max_size=n)
         T.weight[0] = self.weight(0)

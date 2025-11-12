@@ -1,5 +1,5 @@
-from .recursive_trees import RecursiveTree, RecursiveTrees
-from .rooted_trees import RootedTrees
+from .recursive_trees import RecursiveTree
+from .containers import RootedTrees_n, RecursiveTrees_n
 from .random_trees import (
     UniformRootedTree,
     UniformRecursiveTree,
@@ -24,7 +24,7 @@ def test_recursive():
 
     print("code = " + str(T.to_code()))
     print("permutation = " + str(T.to_permutation()))
-    print("rooted_tree = " + str(T.to_rooted_tree().to_nested_list()), "\n")
+    print("rooted_tree = " + str(T.to_nested_list()), "\n")
 
     print("edges = " + str(T.number_of_edges()))
     print("vertices = " + str(T.number_of_vertices()))
@@ -47,7 +47,7 @@ def test_recursive():
     T.plot_distribution("size")
     print("\n")
 
-    Rec = RecursiveTrees(15)
+    Rec = RecursiveTrees_n(15)
     print(Rec)
     print("cardinality = " + str(Rec.cardinality()))
     print(T == Rec.from_code(code))
@@ -57,7 +57,7 @@ def test_recursive():
 def test_rooted():
     code = [0, 1, 2, 3, 4, 5, 6, 7, 6, 5, 5, 4, 5, 4, 3]
     nested = [[[[[[[[]], []], [], []], [[]], []], []]]]
-    T = RootedTrees(15).from_nested_list(nested)
+    T = RootedTrees_n(15).from_nested_list(nested)
 
     print(T, "\n")
 
@@ -72,7 +72,7 @@ def test_rooted():
     print("sym = " + str(T.sym()))
     print("\n")
 
-    Root = RootedTrees(15)
+    Root = RootedTrees_n(15)
     print("cardinality = " + str(Root.cardinality()))
     print(T == Root.from_code(code))
 
@@ -99,17 +99,17 @@ def test_subtree_plancherel(N, K):
     of a Plancherel recursive tree with order N is also
     Plancherel distributed.
     """
-    nums = {T.to_code(): float(0) for T in RecursiveTrees(K)}
+    nums = {T.to_code(): float(0) for T in RecursiveTrees_n(K)}
     dplancherel = {
         T.to_code(): PlancherelRecursiveTree(K).probability(T)
-        for T in RecursiveTrees(K)
+        for T in RecursiveTrees_n(K)
     }
     denom = float(0)
-    for U in RecursiveTrees(N):
-        plan = PlancherelRecursiveTree(N).probability(U)
-        denom += float(plan * np.count_nonzero(U.size[:N] == K))
+    for U in RecursiveTrees_n(N):
+        p = PlancherelRecursiveTree(N).probability(U)
+        denom += float(p * np.count_nonzero(U.size[:N] == K))
         for k in range(N):
             if U.size[k] == K:
-                nums[U.subtree(k).to_code()] += plan
+                nums[U.subtree(k).to_code()] += p
     d = {code: nums[code] / denom for code in nums}
     return all(np.isclose(d[c], dplancherel[c]) for c in d)

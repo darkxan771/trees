@@ -2,8 +2,9 @@ import numpy as np
 
 from scipy.special import factorial
 from collections import defaultdict
-from .routines import c_flatten, raise_tuple, code_to_nested_list
-from .random_trees import UniformRootedTree
+
+from .routines import c_flatten, raise_tuple
+from .recursive_trees import RecursiveTree
 
 
 class RootedTree:
@@ -31,7 +32,7 @@ class RootedTree:
     # Conversions #
     ###############
 
-    def to_code(self):
+    def to_code(self) -> tuple:
         """
         Returns the code of the tree (level sequence in the depth
         first search).
@@ -44,16 +45,16 @@ class RootedTree:
             )
         )
 
-    def to_nested_list(self):
+    def to_nested_list(self) -> list:
         """
         Converts the rooted tree to a nested list.
         """
         return [child.to_nested_list() for child in self.children]
 
-    def _insert_in_recursive_tree(self, T, d: int, mini: int, maxi: int):
+    def _insert_in_recursive_tree(
+        self, T, d: int, mini: int, maxi: int
+    ) -> None:
         sizes = [c.size for c in self.children]
-        if not maxi - mini == sum(sizes) + 1:
-            raise ValueError
         T.children[mini] = (
             mini + 1 + np.cumsum(np.array([0] + sizes))[:-1]
         ).tolist()
@@ -68,13 +69,12 @@ class RootedTree:
                 c._insert_in_recursive_tree(T, d + 1, mini2, maxi2)
                 mini2 = maxi2
 
-    def to_recursive_tree(self):
+    def to_recursive_tree(self) -> RecursiveTree:
         """
         Converts the rooted tree to a recursive tree. The increasing
         labelling which is chosen is uniformly distributed over all
         possibilities.
         """
-        from .recursive_trees import RecursiveTree
 
         T = RecursiveTree(max_size=self.size)
         self._insert_in_recursive_tree(T, 0, 0, self.size)
@@ -85,19 +85,19 @@ class RootedTree:
     # Extract statistical information #
     ###################################
 
-    def number_of_vertices(self):
+    def number_of_vertices(self) -> int:
         """
         Returns the size of the tree (number of vertices).
         """
         return self.size
 
-    def number_of_edges(self):
+    def number_of_edges(self) -> int:
         """
         Returns the number of edges of the tree.
         """
         return self.size - 1
 
-    def height(self):
+    def height(self) -> int:
         """
         Returns the height of the tree (maximal depth of a node).
         """
@@ -106,14 +106,14 @@ class RootedTree:
         else:
             return 1 + max([child.height() for child in self.children])
 
-    def d(self):
+    def d(self) -> int:
         """
         Returns the number of increasing labellings of the tree.
         """
         T = self.to_recursive_tree()
         return int(factorial(self.size) / np.prod(T.size[: self.size]))
 
-    def sym(self):
+    def sym(self) -> int:
         """
         Returns the symmetry factor of the tree.
         """
@@ -127,14 +127,14 @@ class RootedTree:
             prod2 = np.prod(np.array([child.sym() for child in self.children]))
             return int(prod1 * prod2)
 
-    def u(self):
+    def u(self) -> int:
         """
         Returns the number of increasing labellings of the tree,
         up to isomorphisms.
         """
         return int(self.d() / self.sym())
 
-    def plancherel_measure(self):
+    def plancherel_measure(self) -> float:
         """
         Returns the Plancherel measure of the rooted tree.
         """
@@ -150,90 +150,9 @@ class RootedTree:
 
     def plot(
         self, style: str = "centered", with_circles: bool = False, **kwargs
-    ):
+    ) -> None:
         """
         Plots the rooted tree.
         """
         T = self.to_recursive_tree()
         T.plot(style, labels="empty", with_circles=with_circles, **kwargs)
-
-
-class _RootedTreesIterator:
-    def __init__(self, n):
-        self.order = n
-        self.current = np.arange(n)
-        self.finished = False
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self.finished:
-            raise StopIteration
-        res = RootedTrees(self.order).from_code(self.current)
-        if sum(self.current) == self.order - 1:
-            self.finished = True
-        else:
-            p = np.argwhere(self.current > 1)[-1][0]
-            q = np.argwhere(self.current[:p] == self.current[p] - 1)[-1][0]
-            for i in range(p, self.order):
-                self.current[i] = self.current[i - (p - q)]
-        return res
-
-
-class RootedTrees:
-    """
-    A container for rooted (unlabelled) trees with a given size n.
-    """
-
-    def __init__(self, n):
-        self.order = n
-
-    def __repr__(self):
-        return f"Rooted trees with size {self.order}"
-
-    def __iter__(self):
-        return _RootedTreesIterator(self.order)
-
-    def __contains__(self, el):
-        return isinstance(el, RootedTree) and el.size == self.order
-
-    def cardinality(self):
-        """
-        Returns the cardinality of the set of rooted trees with size n.
-
-        The cardinality satisfies the recurrence relation:
-
-        C[n+1]
-        = 1/n sum([d * C[d] * C[n-k+1] for k in 1..n and for d | k]).
-        """
-        from .boltzmann import generating_series_T
-
-        return int(generating_series_T(self.order)[-1])
-
-    def from_code(self, L):
-        """
-        Returns the unique rooted tree with given level sequence.
-        """
-        return self.from_nested_list(code_to_nested_list(L))
-
-    def _from_nested_list_without_checking(self, L):
-        return RootedTree(
-            [RootedTrees(0)._from_nested_list_without_checking(k) for k in L]
-        )
-
-    def from_nested_list(self, L, check=True):
-        """
-        Checks if the nested list has the correct size, and
-        returns the corresponding rooted tree.
-        """
-        T = self._from_nested_list_without_checking(L)
-        if check and (not (T.size == self.order)):
-            raise ValueError
-        return T
-
-    def get_random_element(self):
-        """
-        Generates a uniformly distributed random rooted tree with size n.
-        """
-        return UniformRootedTree(self.order).get_random_element()

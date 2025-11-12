@@ -9,7 +9,7 @@ git clone https://github.com/darkxan771/trees.git
 ```
 
 From outside the trees repository, one can launch `jupyter lab`, 
-then create a Python notebook and execute in the first cell 
+then create a Python notebook and execute in the first cell: 
 ```python
 from trees import *
 ```

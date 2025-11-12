@@ -2,7 +2,7 @@ import numpy as np
 from scipy.optimize import brentq
 
 
-def generating_series_T(N: int):
+def generating_series_T(N: int) -> list[int]:
     """
     Computes the N first terms of the generating series of
     rooted unlabelled trees.
@@ -36,14 +36,14 @@ c = 0.4399240125710253
 rhoinv = 0.33832185689920768
 
 
-def _eval_T_small_values(x: float):
+def _eval_T_small_values(x: float) -> float:
     res = 0
     for coeff in reversed(T):
         res = res * x + coeff
     return float(res)
 
 
-def eval_T(x: float):
+def eval_T(x: float) -> float:
     """
     Computes the value of T(x), for x<rhoinv.
 
@@ -60,7 +60,7 @@ def eval_T(x: float):
         return float(p)
 
 
-def eval_Tprime(x: float):
+def eval_Tprime(x: float) -> float:
     """
     Computes the value of T'(x), for x<rhoinv**2.
     """
@@ -70,7 +70,7 @@ def eval_Tprime(x: float):
     return float(res)
 
 
-def eval_Tsecond(x: float):
+def eval_Tsecond(x: float) -> float:
     """
     Computes the value of T''(x), for x<rhoinv**2.
     """
@@ -80,7 +80,7 @@ def eval_Tsecond(x: float):
     return float(res)
 
 
-def eval_Tthird(x: float):
+def eval_Tthird(x: float) -> float:
     """
     Computes the value of T'''(x), for x<rhoinv**2.
     """
@@ -90,19 +90,19 @@ def eval_Tthird(x: float):
     return float(res)
 
 
-def _ep(x: float):
+def _ep(x: float) -> float:
     return x * eval_Tprime(x)
 
 
-def _es(x: float):
+def _es(x: float) -> float:
     return (x**2) * eval_Tsecond(x)
 
 
-def _et(x: float):
+def _et(x: float) -> float:
     return (x**3) * eval_Tthird(x)
 
 
-def expectation_size(x: float, pointed: bool = False):
+def expectation_size(x: float, pointed: bool = False) -> float:
     """
     Computes the expected size of the random tree with Boltzmann parameter x.
     """
@@ -115,7 +115,7 @@ def expectation_size(x: float, pointed: bool = False):
         return float(B / A)
 
 
-def variance_size(x: float, pointed: bool = False):
+def variance_size(x: float, pointed: bool = False) -> float:
     """
     Computes the variance of the size of the random tree with Boltzmann
     parameter x.
@@ -137,7 +137,7 @@ def variance_size(x: float, pointed: bool = False):
         return C / A + (1 - A) * (B**2) / (A**3)
 
 
-def find_x_for_n(n: int, pointed: bool):
+def find_x_for_n(n: int, pointed: bool) -> float:
     """
     Finds the Boltzmann parameter x in order to obtain
     a tree with expected size n.
@@ -150,8 +150,8 @@ def find_x_for_n(n: int, pointed: bool):
     return float(res)
 
 
-def compute_values(x: float):
+def compute_values(x: float) -> list[float]:
     """
     Compute the values T(x**k) for k <= 50.
     """
-    return [0] + [eval_T(x**k) for k in range(1, 51)]
+    return [float(0)] + [eval_T(x**k) for k in range(1, 51)]
