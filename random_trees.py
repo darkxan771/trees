@@ -1,13 +1,37 @@
+from __future__ import annotations
 import numpy as np
 import numpy.random as rand
 import scipy.stats as scs
 
 from .recursive_trees import RecursiveTree
 from .rooted_trees import RootedTree
-from .routines import random_pairs, poisson_galton_watson
 from .boltzmann import compute_values, find_x_for_n
 
+from typing import TYPE_CHECKING
+from scipy.stats import poisson, uniform
 from scipy.special import factorial
+
+
+if TYPE_CHECKING:
+    from .containers import RootedTrees, RecursiveTrees
+
+
+def _random_pairs(n: int) -> tuple[np.ndarray, np.ndarray]:
+    alea_w = (np.arange(1, n) + np.arange(1, n) ** 2) * rand.random(size=n - 1)
+    w = np.floor(np.sqrt(alea_w + 0.25) + 0.5)
+    J = 1 + rand.randint(w)
+    return (w.astype(int), J)
+
+
+def poisson_galton_watson(mu: float) -> tuple[int, list]:
+    """
+    Returns the data required to create a Galton-Watson tree
+    with offspring distribution Poisson(mu).
+    """
+    xi = poisson(mu).rvs()
+    subs = [poisson_galton_watson(mu) for _ in range(xi)]
+    size = 1 + sum([c[0] for c in subs])
+    return size, subs
 
 
 class RandomTree:
@@ -23,16 +47,16 @@ class RandomTree:
     def __repr__(self):
         return f"Random {self.type} tree with size {self.size}"
 
-    def container(self):
+    def container(self) -> RootedTrees | RecursiveTrees:
         """
         The support of the distribution of random trees.
         """
-        from .containers import RecursiveTrees_n, RootedTrees_n
+        from .containers import RootedTrees, RecursiveTrees
 
         if self.type == "recursive":
-            return RecursiveTrees_n(self.size)
+            return RecursiveTrees(self.size)
         else:
-            return RootedTrees_n(self.size)
+            return RootedTrees(self.size)
 
     def probability(self, T) -> float:
         """
@@ -178,7 +202,7 @@ class PlancherelRecursiveTree(RandomTree):
         n = self.size
         T = RecursiveTree(max_size=n)
         L = [0]
-        (w, J) = random_pairs(n)
+        (w, J) = _random_pairs(n)
         for k in range(1, n):
             i = L[k - w[k - 1]]
             T.add_node(i)

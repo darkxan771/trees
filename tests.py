@@ -1,5 +1,5 @@
 from .recursive_trees import RecursiveTree
-from .containers import RootedTrees_n, RecursiveTrees_n
+from .containers import RootedTrees, RecursiveTrees
 from .random_trees import (
     UniformRootedTree,
     UniformRecursiveTree,
@@ -24,7 +24,7 @@ def test_recursive():
 
     print("code = " + str(T.to_code()))
     print("permutation = " + str(T.to_permutation()))
-    print("rooted_tree = " + str(T.to_nested_list()), "\n")
+    print("rooted_tree = " + str(T.to_rooted_tree().to_nested_list()), "\n")
 
     print("edges = " + str(T.number_of_edges()))
     print("vertices = " + str(T.number_of_vertices()))
@@ -47,7 +47,7 @@ def test_recursive():
     T.plot_distribution("size")
     print("\n")
 
-    Rec = RecursiveTrees_n(15)
+    Rec = RecursiveTrees(15)
     print(Rec)
     print("cardinality = " + str(Rec.cardinality()))
     print(T == Rec.from_code(code))
@@ -57,7 +57,7 @@ def test_recursive():
 def test_rooted():
     code = [0, 1, 2, 3, 4, 5, 6, 7, 6, 5, 5, 4, 5, 4, 3]
     nested = [[[[[[[[]], []], [], []], [[]], []], []]]]
-    T = RootedTrees_n(15).from_nested_list(nested)
+    T = RootedTrees(15).from_nested_list(nested)
 
     print(T, "\n")
 
@@ -72,7 +72,7 @@ def test_rooted():
     print("sym = " + str(T.sym()))
     print("\n")
 
-    Root = RootedTrees_n(15)
+    Root = RootedTrees(15)
     print("cardinality = " + str(Root.cardinality()))
     print(T == Root.from_code(code))
 
@@ -99,13 +99,13 @@ def test_subtree_plancherel(N: int, K: int) -> bool:
     of a Plancherel recursive tree with order N is also
     Plancherel distributed.
     """
-    nums = {T.to_code(): float(0) for T in RecursiveTrees_n(K)}
+    nums = {T.to_code(): float(0) for T in RecursiveTrees(K)}
     dplancherel = {
         T.to_code(): PlancherelRecursiveTree(K).probability(T)
-        for T in RecursiveTrees_n(K)
+        for T in RecursiveTrees(K)
     }
     denom = float(0)
-    for U in RecursiveTrees_n(N):
+    for U in RecursiveTrees(N):
         p = PlancherelRecursiveTree(N).probability(U)
         denom += float(p * np.count_nonzero(U.size[:N] == K))
         for k in range(N):
@@ -125,10 +125,10 @@ def test_subtree_double_recursive(
     """
     nums = {
         (T.to_code(), tuple(T.weight[:K])): float(0)
-        for T in RecursiveTrees_n(K, double=True)
+        for T in RecursiveTrees(K, double=True)
     }
     denom = float(0)
-    for U in RecursiveTrees_n(N, double=True):
+    for U in RecursiveTrees(N, double=True):
         if with_weights:
             denom += float(np.sum((U.size[:N] == K) * U.weight[:N]))
         else:
@@ -141,5 +141,5 @@ def test_subtree_double_recursive(
                 else:
                     nums[(T.to_code(), tuple(T.weight[:K]))] += 1
     d = {code: nums[code] / denom for code in nums}
-    p = float(1 / RecursiveTrees_n(K, True).cardinality())
+    p = float(1 / RecursiveTrees(K, True).cardinality())
     return all(np.isclose(d[c], p) for c in d)

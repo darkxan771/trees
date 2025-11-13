@@ -1,3 +1,4 @@
+from __future__ import annotations
 import numpy as np
 import numpy.random as rand
 import pandas as pd
@@ -5,12 +6,15 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import seaborn as sns
 
-from typing import Callable
+from typing import Callable, TYPE_CHECKING
 from matplotlib.patches import Circle
 from matplotlib.axes._axes import Axes
-from .routines import standardisation, code_to_permutation
+from .conversions import standardisation, code_to_permutation
 
 sns.set_theme()
+
+if TYPE_CHECKING:
+    from .rooted_trees import RootedTree
 
 
 extract_statistic: dict[str, Callable] = {
@@ -117,13 +121,14 @@ class RecursiveTree:
             T.nodes[i]["weight"] = self.weight[i]
         return T
 
-    def to_nested_list(self) -> list:
+    def to_rooted_tree(self) -> RootedTree:
         """
-        Forgets the labels and weights and returns the nested list structure
-        (which can then be converted to a rooted tree).
+        Forgets the labels and weights and returns the rooted tree
         """
+        from .rooted_trees import RootedTree
+
         subs = self.children[0]
-        return [self.subtree(c).to_nested_list() for c in subs]
+        return RootedTree([self.subtree(c).to_rooted_tree() for c in subs])
 
     ###################################
     # Extract statistical information #
@@ -264,7 +269,7 @@ class RecursiveTree:
         corresponding Kuba-Panholzer insertion array.
         """
         if not self.is_double_recursive():
-            raise ValueError
+            raise ValueError("The tree is not double recursive.")
         else:
             n = self.size[0]
             res = np.zeros((2, n - 1), dtype=int)

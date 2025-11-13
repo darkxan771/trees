@@ -3,7 +3,7 @@ import numpy as np
 from scipy.special import factorial
 from collections import defaultdict
 
-from .routines import c_flatten, raise_tuple
+from .conversions import nested_list_to_code
 from .recursive_trees import RecursiveTree
 
 
@@ -39,11 +39,7 @@ class RootedTree:
 
         It is a tuple of integers which uniquely identifies the tree.
         """
-        return tuple(
-            c_flatten(
-                [(0,)] + [raise_tuple(child.code) for child in self.children]
-            )
-        )
+        return nested_list_to_code(self.to_nested_list())
 
     def to_nested_list(self) -> list:
         """
@@ -75,7 +71,6 @@ class RootedTree:
         labelling which is chosen is uniformly distributed over all
         possibilities.
         """
-
         T = RecursiveTree(max_size=self.size)
         self._insert_in_recursive_tree(T, 0, 0, self.size)
         T.random_relabelling()

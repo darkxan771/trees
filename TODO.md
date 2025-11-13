@@ -1,5 +1,8 @@
 # TODO
 
+programs:
+- (next: remove tests plancherel subtrees)
+
 
 maths:
 - expectation and limit law for the profile (at height alpha log n)
