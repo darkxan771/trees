@@ -169,7 +169,7 @@ class RecursiveTrees:
             )
         v = np.array(p)
         v.sort()
-        if not np.all(v == np.arange(1, len(v) + 1)):
+        if not np.all(v == np.arange(len(v))):
             raise ValueError("The parameter p is not a permutation")
         return self.from_code(permutation_to_code(np.array(p)))
 

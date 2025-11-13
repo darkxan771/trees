@@ -37,7 +37,7 @@ def code_to_nested_list(L: tuple | list | np.ndarray) -> list:
                 child.append(L[i] - 1)
         children.append(child)
     children.sort(key=(lambda x: tuple(x)), reverse=True)
-    return [code_to_nested_list(child) for child in childen]
+    return [code_to_nested_list(child) for child in children]
 
 
 def standardisation(L: np.ndarray) -> np.ndarray:
