@@ -1,6 +1,8 @@
 import numpy as np
 import numpy.random as rand
 
+from collections.abc import Sequence
+
 
 def _c_flatten(data):
     for x in data:
@@ -18,7 +20,7 @@ def nested_list_to_code(L: list) -> tuple:
     return tuple(_c_flatten([(0,)] + C))
 
 
-def code_to_nested_list(L: tuple | list | np.ndarray) -> list:
+def code_to_nested_list(L: Sequence[int]) -> list:
     """
     Converts the code of a rooted tree into the corresponding nested list.
 

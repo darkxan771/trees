@@ -1,8 +1,16 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 from typing import Callable
 from networkx import spring_layout
+from matplotlib.patches import Circle
+from matplotlib.axes._axes import Axes
 from .recursive_trees import RecursiveTree
+
+
+###########
+# Layouts #
+###########
 
 
 def angles(T: RecursiveTree) -> np.ndarray:
@@ -36,8 +44,8 @@ def radii(T: RecursiveTree, style: str = "circular") -> np.ndarray:
 
 def compute_centered(T: RecursiveTree) -> dict:
     D = T.depth
-    prof = T.profile()
-    rpos = T.row_positions()
+    prof = T.profile
+    rpos = T.row_positions
     return {
         i: np.array([-(prof[D[i]] + 1) / 2 + rpos[i], D[i]])
         for i in range(T.size[0])
@@ -45,7 +53,7 @@ def compute_centered(T: RecursiveTree) -> dict:
 
 
 def compute_left_aligned(T: RecursiveTree) -> dict:
-    rpos = T.row_positions()
+    rpos = T.row_positions
     return {i: np.array([rpos[i], T.depth[i]]) for i in range(T.size[0])}
 
 
@@ -75,6 +83,11 @@ compute_layouts: dict[str, Callable] = {
 }
 
 
+##########
+# Labels #
+##########
+
+
 def labels_simple(T: RecursiveTree) -> dict:
     return {i: str(i) for i in range(T.size[0])}
 
@@ -98,3 +111,45 @@ compute_labels: dict[str, Callable] = {
     "double": labels_double,
     "with_weights": labels_with_weights,
 }
+
+
+###########
+# Options #
+###########
+
+graphic_options = """
+        node_size (int, 300)
+        node_shape (str, "o")
+        arrows (bool, True)
+        arrow_size (int, 10)
+        width (float, 1.0)
+        node_color, edge_color
+        font_size (int, 12)
+        """
+
+
+class GraphicOptions:
+    """
+    Set of graphic options for the drawing of trees.
+    """
+
+    def __init__(self, dict: dict):
+        self.options = dict
+        self.style = self.options.pop("style", "centered")
+        self.labels = self.options.pop("labels", "simple")
+        self.with_levels = self.options.pop("with_levels", False)
+
+    def draw_levels_on_ax(self, ax0: Axes, H: int, prof: np.ndarray) -> None:
+        col = (0.8, 0.8, 0.8)
+        for i in range(1, H + 1):
+            if self.style == "circular":
+                ax0.add_patch(Circle((0, 0), i, fill=False, edgecolor=col))
+            if self.style == "log-circular":
+                ax0.add_patch(
+                    Circle((0, 0), np.log(1 + i), fill=False, edgecolor=col)
+                )
+            if self.style == "centered":
+                p = (prof[i] - 1) / 2
+                ax0.plot([-p - 1, p - 1], [i, i], color=col)
+            if self.style == "left-aligned":
+                ax0.plot([0, prof[i] - 1], [i, i], color=col)

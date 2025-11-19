@@ -11,6 +11,7 @@ from .conversions import permutation_to_code, code_to_nested_list
 from .boltzmann import generating_series_T
 from scipy.special import factorial
 from itertools import chain, count
+from collections.abc import Sequence
 
 
 class InfiniteSetError(Exception):
@@ -34,7 +35,7 @@ class _RecursiveTreesIterator_n:
     def __next__(self):
         if self.finished:
             raise StopIteration
-        res = RecursiveTrees().from_code(self.current)
+        res = RecursiveTrees().from_code(self.current.tolist())
         test = np.argwhere(self.current < np.arange(self.order - 1))
         if test.size == 0:
             self.finished = True
@@ -88,7 +89,7 @@ class _RootedTreesIterator_n:
     def __next__(self):
         if self.finished:
             raise StopIteration
-        res = RootedTrees().from_code(self.current)
+        res = RootedTrees().from_code(self.current.tolist())
         if sum(self.current) == self.order - 1:
             self.finished = True
         else:
@@ -158,7 +159,7 @@ class RecursiveTrees:
         else:
             return factorial(n - 1, True)
 
-    def from_permutation(self, p: tuple | list | np.ndarray) -> RecursiveTree:
+    def from_permutation(self, p: Sequence[int]) -> RecursiveTree:
         """
         Constructs the unique recursive tree corresponding to
         the permutation p.
@@ -171,9 +172,9 @@ class RecursiveTrees:
         v.sort()
         if not np.all(v == np.arange(len(v))):
             raise ValueError("The parameter p is not a permutation")
-        return self.from_code(permutation_to_code(np.array(p)))
+        return self.from_code(permutation_to_code(np.array(p)).tolist())
 
-    def from_code(self, c: tuple | list | np.ndarray) -> RecursiveTree:
+    def from_code(self, c: Sequence[int]) -> RecursiveTree:
         """
         Constructs the unique recursive tree corresponding to
         the code c.
@@ -270,7 +271,7 @@ class RootedTrees:
             raise InfiniteSetError("Infinite set")
         return int(generating_series_T(self.order)[-1])
 
-    def from_code(self, L: tuple | list | np.ndarray) -> RootedTree:
+    def from_code(self, L: Sequence[int]) -> RootedTree:
         """
         Returns the unique rooted tree with given level sequence.
         """

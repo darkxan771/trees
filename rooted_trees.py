@@ -5,6 +5,7 @@ from collections import defaultdict
 
 from .conversions import nested_list_to_code
 from .recursive_trees import RecursiveTree
+from .partitions import IntegerPartition
 
 
 class RootedTree:
@@ -76,41 +77,64 @@ class RootedTree:
         T.random_relabelling()
         return T
 
-    ###################################
-    # Extract statistical information #
-    ###################################
-
-    def number_of_vertices(self) -> int:
-        """
-        Returns the size of the tree (number of vertices).
-        """
-        return self.size
-
+    ##############
+    # Properties #
+    ##############
+    @property
     def number_of_edges(self) -> int:
         """
-        Returns the number of edges of the tree.
+        Yhe number of edges of the tree.
         """
         return self.size - 1
 
+    @property
+    def number_of_vertices(self) -> int:
+        """
+        The number of vertices of the tree.
+        """
+        return self.size
+
+    @property
     def height(self) -> int:
         """
-        Returns the height of the tree (maximal depth of a node).
+        The height of the tree (maximal depth of a node).
         """
         if self.children == []:
             return 0
         else:
-            return 1 + max([child.height() for child in self.children])
+            return 1 + max([child.height for child in self.children])
 
+    @property
+    def profile(self) -> np.ndarray:
+        """
+        The profile of the tree (number of nodes on each level).
+        """
+        code = np.array(self.to_code())
+        h = max(code)
+        return np.array([np.count_nonzero(code == d) for d in range(h + 1)])
+
+    @property
+    def subtrees_partition(self) -> IntegerPartition:
+        """
+        The integer partition with size n-1 corresponding to the
+        sizes of the subtrees attached to the root.
+        """
+        res = [T.size for T in self.children]
+        res.sort(reverse=True)
+        return IntegerPartition(res)
+
+    @property
     def d(self) -> int:
         """
-        Returns the number of increasing labellings of the tree.
+        The number of increasing labellings of the tree.
         """
         T = self.to_recursive_tree()
         return int(factorial(self.size) / np.prod(T.size[: self.size]))
 
+    @property
     def sym(self) -> int:
         """
-        Returns the symmetry factor of the tree.
+        The symmetry factor of the tree.
         """
         if self.size == 0:
             return 1
@@ -119,21 +143,23 @@ class RootedTree:
             for child in self.children:
                 m[child.code] += 1
             prod1 = np.prod(np.array([factorial(m[k]) for k in m]))
-            prod2 = np.prod(np.array([child.sym() for child in self.children]))
+            prod2 = np.prod(np.array([child.sym for child in self.children]))
             return int(prod1 * prod2)
 
+    @property
     def u(self) -> int:
         """
-        Returns the number of increasing labellings of the tree,
+        The number of increasing labellings of the tree,
         up to isomorphisms.
         """
-        return int(self.d() / self.sym())
+        return int(self.d / self.sym)
 
+    @property
     def plancherel_measure(self) -> float:
         """
-        Returns the Plancherel measure of the rooted tree.
+        The Plancherel measure of the rooted tree.
         """
-        num = self.d() * self.u()
+        num = self.d * self.u
         denum = np.prod(
             np.array([(i * (i + 1) / 2) for i in range(1, self.size + 1)])
         )
@@ -143,11 +169,11 @@ class RootedTree:
     # Visualisation #
     #################
 
-    def plot(
-        self, style: str = "centered", with_circles: bool = False, **kwargs
-    ) -> None:
+    def plot(self, **options) -> None:
         """
         Plots the rooted tree.
         """
+        opt = options
+        opt["labels"] = "empty"
         T = self.to_recursive_tree()
-        T.plot(style, labels="empty", with_circles=with_circles, **kwargs)
+        T.plot(**opt)

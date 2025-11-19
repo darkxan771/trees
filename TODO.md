@@ -1,7 +1,8 @@
 # TODO
 
 programs:
-- (next: remove tests plancherel subtrees)
+- complete test_random()
+- documentation integer partitions
 
 
 maths:

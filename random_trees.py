@@ -1,15 +1,14 @@
 from __future__ import annotations
+from collections import defaultdict
+from typing import Callable, TYPE_CHECKING
+from scipy.stats import poisson
+from scipy.special import factorial
 import numpy as np
 import numpy.random as rand
-import scipy.stats as scs
 
 from .recursive_trees import RecursiveTree
 from .rooted_trees import RootedTree
 from .boltzmann import compute_values, find_x_for_n
-
-from typing import TYPE_CHECKING
-from scipy.stats import poisson, uniform
-from scipy.special import factorial
 
 
 if TYPE_CHECKING:
@@ -68,6 +67,162 @@ class RandomTree:
         else:
             return float(0)
 
+    def distribution(self) -> defaultdict:
+        """
+        Returns a dictionary with items (T, probability[T]), where T is
+        identified by its code.
+        """
+        if self.size == 0:
+            raise NotImplementedError
+        return defaultdict(
+            float, {T.to_code(): self.probability(T) for T in self.container()}
+        )
+
+    def distribution_partition(self) -> defaultdict:
+        """
+        Returns a dictionary with items (L, probability[L]), where L
+        runs over the set of integer partitions with size n - 1, and
+        probability[L] is the probability of L being the list of
+        sizes of the subtrees of a random tree.
+        """
+        if self.size == 0:
+            raise NotImplementedError
+        res = defaultdict(float)
+        for T in self.container():
+            p = tuple(T.subtrees_partition.parts)
+            res[p] += self.probability(T)
+        return res
+
+    def get_random_element(self) -> RootedTree | RecursiveTree:
+        raise NotImplementedError
+
+
+class DeterministicRecursiveTree(RandomTree):
+    """
+    A deterministic recursive tree.
+    """
+
+    def __init__(self, T: RecursiveTree):
+        self.size = T.size[0]
+        self.type = "recursive"
+        self.tree = T
+
+    def __repr__(self):
+        return self.tree.__repr__()
+
+    def probability(self, T: RecursiveTree) -> float:
+        """
+        Returns 1 if T is the deterministic recursive tree,
+        and 0 otherwise.
+        """
+        return float(self.tree == T)
+
+    def get_random_element(self) -> RecursiveTree:
+        """
+        Returns the deterministic recursive tree.
+        """
+        return self.tree
+
+
+class RandomSubtree(RandomTree):
+    """
+    Random subtree T of a supertree U, which can itself be random (but with
+    fixed size).
+    """
+
+    def __init__(self, U: RandomTree):
+        self.size = 0
+        self.type = "recursive"
+        self.supertree = U
+        if not U.type == "recursive":
+            raise ValueError("U is not a random tree with recursive type")
+
+    def __repr__(self):
+        return f"Random subtree of a {self.supertree}"
+
+    def distribution(self) -> defaultdict:
+        """
+        Returns a dictionary with items (T, probability[T]), where T is
+        identified by its code.
+        """
+        from .containers import RecursiveTrees
+
+        d = defaultdict(float)
+        n = self.supertree.size
+        for k in range(n):
+            for T in RecursiveTrees(n):
+                d[T.subtree(k).to_code()] += self.supertree.probability(T) / n
+        return d
+
+    def probability(self, T: RecursiveTree) -> float:
+        """
+        Returns the probability of the recursive tree T as a
+        random subtree of the supertree U.
+        """
+        return self.distribution()[T.to_code()]
+
+    def get_random_element(self) -> RecursiveTree:
+        """
+        Picks at random a subtree T of the supertree U.
+        """
+        T = self.supertree.get_random_element()
+        if isinstance(T, RecursiveTree):
+            k = T.random_node()
+            renorm = False
+            if T.is_double_recursive():
+                renorm = True
+            return T.subtree(k, renormalise_weights=renorm)
+        else:
+            raise NotImplementedError
+
+
+class RandomCut(RandomTree):
+    """
+    Random cut T of a supertree U, which can itself be random.
+    """
+
+    def __init__(self, U: RandomTree):
+        self.size = 0
+        self.type = "recursive"
+        self.supertree = U
+        if not U.type == "recursive":
+            raise ValueError("T is not a random tree with recursive type")
+
+    def __repr__(self):
+        return f"Random cut of a {self.supertree}"
+
+    def distribution(self) -> defaultdict:
+        from .containers import RecursiveTrees
+
+        d = defaultdict(float)
+        n = self.supertree.size
+        for k in range(1, n):
+            for T in RecursiveTrees(n):
+                code = T.cut(k).to_code()
+                d[code] += self.supertree.probability(T) / (n - 1)
+        return d
+
+    def probability(self, T: RecursiveTree) -> float:
+        """
+        Returns the probability of the recursive tree T as a
+        random cut of the supertree U.
+        """
+        return self.distribution()[T.to_code()]
+
+    def get_random_element(self) -> RecursiveTree:
+        """
+        Picks at random a cut T of the supertree U.
+        """
+        T = self.supertree.get_random_element()
+        if isinstance(T, RecursiveTree):
+            k = rand.randint(1, self.supertree.size)
+            renorm = False
+            if T.is_double_recursive():
+                renorm = True
+            return T.cut(k, renormalise_weights=renorm)
+        else:
+            raise NotImplementedError
+
 
 class UniformRootedTree(RandomTree):
     """
@@ -85,7 +240,7 @@ class UniformRootedTree(RandomTree):
         self, values, i: int, pointed: bool = False
     ) -> RootedTree:
         div_range = range(1, 50 // i + 1)
-        N = [0] + [scs.poisson(values[k * i] / k).rvs() for k in div_range]
+        N = [0] + [poisson(values[k * i] / k).rvs() for k in div_range]
         res = []
         if i == 1 and pointed:
             P = np.array(values)
@@ -154,7 +309,7 @@ class UniformRootedTree(RandomTree):
                 S = s
                 for _ in range(s):
                     N = [0, 0] + [
-                        scs.poisson(values[k] / k).rvs() for k in range(2, 51)
+                        poisson(values[k] / k).rvs() for k in range(2, 51)
                     ]
                     toadd = []
                     for k in range(2, 51):
@@ -180,7 +335,7 @@ class PlancherelRecursiveTree(RandomTree):
     def __repr__(self):
         return f"Plancherel Recursive Tree with size {self.size}"
 
-    def probability(self, T) -> float:
+    def probability(self, T: RecursiveTree) -> float:
         """
         Returns the probability of the recursive tree T under
         the Plancherel distribution.
@@ -238,23 +393,24 @@ class WeightedRecursiveTree(RandomTree):
     weights given by a function i -> w(i).
     """
 
-    def __init__(self, n, w):
+    def __init__(self, n: int, weight: Callable[[int], float]):
         self.size = n
         self.type = "recursive"
-        self.weight = w
+        self.weight = weight
 
     def __repr__(self):
         return f"Weighted Recursive Tree with size {self.size}"
 
-    def probability(self, T) -> float:
+    def probability(self, T: RecursiveTree) -> float:
         """
         Returns the probability of the recursive tree T under the
         weighted distribution.
         """
         if T in self.container():
             n = self.size
-            num = np.prod(T.weight[T.parent[np.arange(1, n)]])
-            denom = np.prod(np.cumsum([T.weight[: n - 1]]))
+            W = np.vectorize(lambda x: self.weight(x))
+            num = np.prod(W(T.parent[np.arange(1, n)]))
+            denom = np.prod(np.cumsum(W(np.arange(n - 1))))
             return float(num / denom)
         else:
             return float(0)
@@ -269,5 +425,5 @@ class WeightedRecursiveTree(RandomTree):
         T.weight[0] = self.weight(0)
         for k in range(1, n):
             i = T.random_node(with_weights=True)
-            T.add_node(i, new_weight=self.weight[k])
+            T.add_node(i, new_weight=self.weight(k))
         return T

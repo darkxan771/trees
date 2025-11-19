@@ -5,15 +5,24 @@ from .random_trees import (
     PlancherelRecursiveTree,
     UniformRecursiveTree,
     UniformRootedTree,
+    WeightedRecursiveTree,
+    RandomSubtree,
+    RandomCut,
 )
 from .crump_jagers_mode import CrumpJagersMode, PoissonPointProcess
+from .partitions import (
+    IntegerPartition,
+    IntegerPartitions,
+    PlancherelPartition,
+    EwensPartition,
+)
 from .tests import (
     test_recursive,
     test_rooted,
+    test_partition,
     test_random,
-    test_subtree_plancherel,
-    test_subtree_double_recursive,
 )
+from .draw_helpers import graphic_options
 
 
 __all__ = [
@@ -24,22 +33,18 @@ __all__ = [
     "PlancherelRecursiveTree",
     "UniformRecursiveTree",
     "UniformRootedTree",
+    "WeightedRecursiveTree",
+    "RandomSubtree",
+    "RandomCut",
     "CrumpJagersMode",
     "PoissonPointProcess",
+    "IntegerPartition",
+    "IntegerPartitions",
+    "PlancherelPartition",
+    "EwensPartition",
     "test_recursive",
     "test_rooted",
+    "test_partition",
     "test_random",
-    "test_subtree_plancherel",
-    "test_subtree_double_recursive",
+    "graphic_options",
 ]
-
-
-graphic_options = """
-        node_size (int, 300)
-        node_shape (str, "o")
-        arrows (bool, True)
-        arrow_size (int, 10)
-        width (float, 1.0)
-        node_color, edge_color
-        font_size (int, 12)
-        """
