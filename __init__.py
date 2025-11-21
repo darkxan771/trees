@@ -1,7 +1,8 @@
-from .recursive_trees import RecursiveTree
-from .rooted_trees import RootedTree
-from .containers import RecursiveTrees, RootedTrees
-from .random_trees import (
+from .recursive.recursive_tree import RecursiveTree
+from .rooted.rooted_tree import RootedTree
+from .containers.trees import RecursiveTrees, RootedTrees
+from .abstraction.partition import IntegerPartition
+from .random.random_trees import (
     PlancherelRecursiveTree,
     UniformRecursiveTree,
     UniformRootedTree,
@@ -9,20 +10,18 @@ from .random_trees import (
     RandomSubtree,
     RandomCut,
 )
-from .crump_jagers_mode import CrumpJagersMode, PoissonPointProcess
-from .partitions import (
-    IntegerPartition,
+from .random.crump_jagers_mode import CrumpJagersMode, PoissonPointProcess
+from .containers.partitions import (
     IntegerPartitions,
-    PlancherelPartition,
-    EwensPartition,
 )
-from .tests import (
+from .random.random_partitions import PlancherelPartition, EwensPartition
+from .tests.tests import (
     test_recursive,
     test_rooted,
     test_partition,
     test_random,
 )
-from .draw_helpers import graphic_options
+from .abstraction.plot import graphic_options
 
 
 __all__ = [

@@ -2,7 +2,7 @@ import numpy as np
 import scipy.stats as scs
 
 from copy import deepcopy
-from .recursive_trees import RecursiveTree
+from ..recursive.recursive_tree import RecursiveTree
 
 
 class PointProcess:

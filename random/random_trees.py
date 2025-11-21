@@ -1,18 +1,15 @@
 from __future__ import annotations
-from collections import defaultdict
-from typing import Callable, TYPE_CHECKING
-from scipy.stats import poisson
-from scipy.special import factorial
 import numpy as np
 import numpy.random as rand
 
-from .recursive_trees import RecursiveTree
-from .rooted_trees import RootedTree
+from collections import defaultdict
+from typing import Callable
+from scipy.stats import poisson
+from scipy.special import factorial
+from ..recursive.recursive_tree import RecursiveTree
+from ..rooted.rooted_tree import RootedTree
+from ..containers.trees import RootedTrees, RecursiveTrees
 from .boltzmann import compute_values, find_x_for_n
-
-
-if TYPE_CHECKING:
-    from .containers import RootedTrees, RecursiveTrees
 
 
 def _random_pairs(n: int) -> tuple[np.ndarray, np.ndarray]:
@@ -50,8 +47,6 @@ class RandomTree:
         """
         The support of the distribution of random trees.
         """
-        from .containers import RootedTrees, RecursiveTrees
-
         if self.type == "recursive":
             return RecursiveTrees(self.size)
         else:
@@ -75,7 +70,8 @@ class RandomTree:
         if self.size == 0:
             raise NotImplementedError
         return defaultdict(
-            float, {T.to_code(): self.probability(T) for T in self.container()}
+            float,
+            {T.convert("code"): self.probability(T) for T in self.container()},
         )
 
     def distribution_partition(self) -> defaultdict:
@@ -145,13 +141,13 @@ class RandomSubtree(RandomTree):
         Returns a dictionary with items (T, probability[T]), where T is
         identified by its code.
         """
-        from .containers import RecursiveTrees
-
         d = defaultdict(float)
         n = self.supertree.size
         for k in range(n):
             for T in RecursiveTrees(n):
-                d[T.subtree(k).to_code()] += self.supertree.probability(T) / n
+                d[T.subtree(k).convert("code")] += (
+                    self.supertree.probability(T) / n
+                )
         return d
 
     def probability(self, T: RecursiveTree) -> float:
@@ -159,7 +155,7 @@ class RandomSubtree(RandomTree):
         Returns the probability of the recursive tree T as a
         random subtree of the supertree U.
         """
-        return self.distribution()[T.to_code()]
+        return self.distribution()[T.convert("code")]
 
     def get_random_element(self) -> RecursiveTree:
         """
@@ -192,13 +188,15 @@ class RandomCut(RandomTree):
         return f"Random cut of a {self.supertree}"
 
     def distribution(self) -> defaultdict:
-        from .containers import RecursiveTrees
-
+        """
+        Returns a dictionary with items (T, probability[T]), where T is
+        identified by its code.
+        """
         d = defaultdict(float)
         n = self.supertree.size
         for k in range(1, n):
             for T in RecursiveTrees(n):
-                code = T.cut(k).to_code()
+                code = T.cut(k).convert("code")
                 d[code] += self.supertree.probability(T) / (n - 1)
         return d
 
@@ -207,7 +205,7 @@ class RandomCut(RandomTree):
         Returns the probability of the recursive tree T as a
         random cut of the supertree U.
         """
-        return self.distribution()[T.to_code()]
+        return self.distribution()[T.convert("code")]
 
     def get_random_element(self) -> RecursiveTree:
         """

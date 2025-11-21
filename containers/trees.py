@@ -1,14 +1,10 @@
 import numpy as np
 
-from .recursive_trees import RecursiveTree
-from .rooted_trees import RootedTree
-from .random_trees import (
-    UniformRootedTree,
-    UniformRecursiveTree,
-    PlancherelRecursiveTree,
-)
-from .conversions import permutation_to_code, code_to_nested_list
-from .boltzmann import generating_series_T
+from ..recursive.recursive_tree import RecursiveTree
+from ..rooted.rooted_tree import RootedTree
+from ..random.boltzmann import generating_series_T
+from ..recursive.conversions import permutation_to_code
+from ..rooted.conversions import code_to_nested_list
 from scipy.special import factorial
 from itertools import chain, count
 from collections.abc import Sequence
@@ -186,7 +182,7 @@ class RecursiveTrees:
         res = RecursiveTree(max_size=len(c) + 1)
         res.weight[0] = len(c) + 1
         for k in range(len(c)):
-            res.add_node(c[k], new_weight=len(c) - k)
+            _ = res.add_node(c[k], new_weight=len(c) - k)
         return res
 
     def from_KP_insertion_array(self, L: np.ndarray) -> RecursiveTree:
@@ -203,7 +199,7 @@ class RecursiveTrees:
             )
         T = RecursiveTree(max_size=L.shape[1] + 1)
         for v in L.transpose()[:,]:
-            T.KP_insertion_at_weight(v[0], v[1])
+            _ = T.KP_insertion_at_weight(v[0], v[1])
         return T
 
     def get_random_element(
@@ -213,6 +209,11 @@ class RecursiveTrees:
         Picks a recursive tree at random. Available distributions are:
         "uniform", "plancherel".
         """
+        from ..random.random_trees import (
+            UniformRecursiveTree,
+            PlancherelRecursiveTree,
+        )
+
         if self.order == 0:
             raise InfiniteSetError(
                 "No probability distribution defined on the infinite set."
@@ -287,6 +288,8 @@ class RootedTrees:
         """
         Generates a uniformly distributed random rooted tree with size n.
         """
+        from ..random.random_trees import UniformRootedTree
+
         if self.order == 0:
             raise InfiniteSetError("Infinite set")
         return UniformRootedTree(self.order).get_random_element()

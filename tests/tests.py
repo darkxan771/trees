@@ -1,18 +1,16 @@
-from .recursive_trees import RecursiveTree
-from .containers import RootedTrees, RecursiveTrees
-from .random_trees import (
+import numpy as np
+
+from ..recursive.recursive_tree import RecursiveTree
+from ..containers.trees import RootedTrees, RecursiveTrees
+from ..random.random_trees import (
     UniformRootedTree,
     UniformRecursiveTree,
     PlancherelRecursiveTree,
 )
-from .partitions import (
+from ..abstraction.partition import (
     IntegerPartition,
-    IntegerPartitions,
-    EwensPartition,
-    PlancherelPartition,
 )
-
-import numpy as np
+from ..containers.partitions import IntegerPartitions
 
 
 def test_recursive():
@@ -21,13 +19,13 @@ def test_recursive():
     L = [[[[]], [], [], []], [[], []], [[]], [[]], []]
     T = RecursiveTree(max_size=15)
     for i in code:
-        T.add_node(i)
+        _ = T.add_node(i)
 
-    assert T.to_code() == code
-    assert T.to_permutation() == permutation
-    assert T.to_rooted_tree().to_nested_list() == L
+    assert T.convert("code") == code
+    assert T.convert("permutation") == permutation
+    assert T.convert("rooted").convert("nested_list") == L
 
-    print(T.first_columns(), "\n")
+    print(T.convert("dataframe"))
 
     T.plot()
 
@@ -55,25 +53,25 @@ def test_recursive():
     ]
 
     degrees = np.array([3 / 5, 1 / 5, 1 / 15, 0, 1 / 15, 1 / 15])
-    assert np.all(np.isclose(T.node_degrees.array, degrees))
+    assert np.all(np.isclose(T.statistic("degree").array, degrees))
     depths = np.array([1 / 15, 1 / 3, 8 / 15, 1 / 15])
-    assert np.all(np.isclose(T.node_depths.array, depths))
+    assert np.all(np.isclose(T.statistic("depth").array, depths))
     sizes = np.array(
         [0, 3 / 5, 1 / 5, 1 / 15, 0, 0, 1 / 15, 0, 0, 0, 0, 0, 0, 0, 0, 1 / 15]
     )
-    assert np.all(np.isclose(T.node_sizes.array, sizes))
+    assert np.all(np.isclose(T.statistic("size").array, sizes))
 
     assert T.path_to_root(13).tolist() == [0, 3, 13]
     assert T.subtree_indices(1) == [1, 5, 6, 10, 11, 12]
 
     S = RecursiveTree(max_size=6)
     for j in (0, 0, 0, 2, 0):
-        S.add_node(j)
+        _ = S.add_node(j)
     assert T.subtree(1) == S
 
     C = RecursiveTree(max_size=12)
     for k in (0, 0, 0, 1, 1, 0, 2, 1, 5, 1, 3):
-        C.add_node(k)
+        _ = C.add_node(k)
     assert T.cut(4) == C
 
     T.weight = np.array([15, 13, 14, 6, 5, 9, 12, 11, 2, 8, 7, 10, 3, 1, 4])
@@ -84,24 +82,7 @@ def test_recursive():
             [1, 2, 1, 1, 3, 4, 4, 1, 4, 4, 7, 2, 1, 4],
         ]
     )
-    assert np.all(T.KP_insertion_array == KP)
-    assert T.other_labels.tolist() == [
-        0,
-        2,
-        1,
-        9,
-        10,
-        6,
-        3,
-        4,
-        13,
-        7,
-        8,
-        5,
-        12,
-        14,
-        11,
-    ]
+    assert np.all(T.convert("KP_insertion_array") == KP)
 
     Rec = RecursiveTrees(15)
     assert T in Rec
@@ -121,8 +102,8 @@ def test_rooted():
 
     T.plot()
 
-    assert T.to_code() == code
-    assert T.to_nested_list() == nested
+    assert T.convert("code") == code
+    assert T.convert("nested_list") == nested
     assert T.number_of_edges == 14
     assert T.number_of_vertices == 15
     assert T.height == 7
@@ -175,7 +156,9 @@ def test_random():
     print("\n")
     UR2 = UniformRecursiveTree(5)
     R2 = RecursiveTrees(5)
-    assert all(np.isclose(UR2.distribution()[T.to_code()], 1 / 24) for T in R2)
+    assert all(
+        np.isclose(UR2.distribution()[T.convert("code")], 1 / 24) for T in R2
+    )
 
     print("Random uniform Plancherel tree", "\n")
     PT = PlancherelRecursiveTree(30).get_random_element()
@@ -184,4 +167,5 @@ def test_random():
 
     print("Done !")
 
-    # TODO: RandomSubtree, RandomCut, PlancherelPartition, EwensPartition
+
+#     # TODO: RandomSubtree, RandomCut, PlancherelPartition, EwensPartition

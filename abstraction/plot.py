@@ -1,11 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import networkx as nx
 
 from typing import Callable
 from networkx import spring_layout
 from matplotlib.patches import Circle
 from matplotlib.axes._axes import Axes
-from .recursive_trees import RecursiveTree
+from .tree import Tree
+from ..recursive.recursive_tree import RecursiveTree
 
 
 ###########
@@ -67,7 +69,7 @@ def compute_circular(
 
 
 def compute_natural(T: RecursiveTree) -> dict:
-    Tn = T.to_networkx()
+    Tn = T.convert("networkx")
     pos0 = compute_circular(T, radii(T), angles(T))
     return spring_layout(Tn, pos=pos0, k=0.1, iterations=300)
 
@@ -153,3 +155,27 @@ class GraphicOptions:
                 ax0.plot([-p - 1, p - 1], [i, i], color=col)
             if self.style == "left-aligned":
                 ax0.plot([0, prof[i] - 1], [i, i], color=col)
+
+
+##################
+# Drawing a tree #
+##################
+
+
+def draw_tree_on_ax(T: Tree, ax0: Axes, **options) -> None:
+    G = GraphicOptions(options)
+    if T.type == "rooted":
+        G.labels = "empty"
+    RT = T.convert("recursive")
+    Tn = T.convert("networkx")
+    ax0.set_axis_off()
+    if G.with_levels:
+        G.draw_levels_on_ax(ax0, RT.height, RT.profile)
+    pos0 = compute_layouts[G.style](RT)
+    if G.labels == "empty":
+        nx.draw_networkx(Tn, ax=ax0, pos=pos0, with_labels=False, **G.options)
+    else:
+        L = compute_labels[G.labels](RT)
+        nx.draw_networkx(Tn, ax=ax0, pos=pos0, labels=L, **G.options)
+    if G.style in ["circular", "log-circular", "natural"]:
+        ax0.set_aspect(1)
