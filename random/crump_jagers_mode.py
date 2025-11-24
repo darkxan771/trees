@@ -4,6 +4,8 @@ import scipy.stats as scs
 from copy import deepcopy
 from ..recursive.recursive_tree import RecursiveTree
 
+# from .random_trees import RandomTree
+
 
 class PointProcess:
     """
@@ -19,7 +21,7 @@ class PointProcess:
         self.name_append = n_app
 
     def __repr__(self):
-        return f"{self.name_prepend} Point process on R+ {self.name_append}"
+        return f"{self.name_prepend} point process on R+ {self.name_append}"
 
     def __iter__(self):
         return self

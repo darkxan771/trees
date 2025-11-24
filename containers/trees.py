@@ -2,7 +2,7 @@ import numpy as np
 
 from ..recursive.recursive_tree import RecursiveTree
 from ..rooted.rooted_tree import RootedTree
-from ..random.boltzmann import generating_series_T
+from ..random.boltzmann_tree import generating_series_T
 from ..recursive.conversions import permutation_to_code
 from ..rooted.conversions import code_to_nested_list
 from scipy.special import factorial
@@ -202,24 +202,18 @@ class RecursiveTrees:
             _ = T.KP_insertion_at_weight(v[0], v[1])
         return T
 
-    def get_random_element(
-        self, distribution: str = "uniform"
-    ) -> RecursiveTree:
+    def get_random_element(self) -> RecursiveTree:
         """
-        Picks a recursive tree at random. Available distributions are:
-        "uniform", "plancherel".
+        Picks a recursive tree uniformly at random.
         """
         from ..random.random_trees import (
             UniformRecursiveTree,
-            PlancherelRecursiveTree,
         )
 
         if self.order == 0:
             raise InfiniteSetError(
                 "No probability distribution defined on the infinite set."
             )
-        if distribution == "plancherel":
-            return PlancherelRecursiveTree(self.order).get_random_element()
         else:
             return UniformRecursiveTree(self.order).get_random_element()
 

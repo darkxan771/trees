@@ -1,5 +1,6 @@
 from __future__ import annotations
 import numpy as np
+import matplotlib.pyplot as plt
 from typing import Sequence
 from scipy.special import factorial
 
@@ -98,3 +99,16 @@ class IntegerPartition:
             for i in range(L[j]):
                 res //= L[j] - i + C[i] - j - 1
         return res
+
+    def plot(self, style="french") -> None:
+        """
+        Plots the Young diagram of the integer partition.
+
+        Available options:
+        - style: "french", "english", "russian".
+        """
+        from .plot import draw_partition_on_ax
+
+        fig, ax = plt.subplots()
+        draw_partition_on_ax(self, ax, style)
+        plt.show()

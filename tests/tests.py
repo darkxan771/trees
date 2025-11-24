@@ -1,5 +1,6 @@
 import numpy as np
 
+
 from ..recursive.recursive_tree import RecursiveTree
 from ..containers.trees import RootedTrees, RecursiveTrees
 from ..random.random_trees import (
@@ -11,6 +12,7 @@ from ..abstraction.partition import (
     IntegerPartition,
 )
 from ..containers.partitions import IntegerPartitions
+from ..random.random_partitions import UniformPartition, PlancherelPartition
 
 
 def test_recursive():
@@ -137,6 +139,9 @@ def test_partition():
         [2, 2],
         [4],
     ]
+
+    P.plot()
+
     print("\n", "Done !")
 
 
@@ -160,12 +165,24 @@ def test_random():
         np.isclose(UR2.distribution()[T.convert("code")], 1 / 24) for T in R2
     )
 
-    print("Random uniform Plancherel tree", "\n")
+    print("Random Plancherel recursive tree", "\n")
     PT = PlancherelRecursiveTree(30).get_random_element()
     PT.plot()
     print("\n")
 
+    print("Random uniform partition", "\n")
+    P = UniformPartition(30).get_random_element()
+    P.plot()
+    print("\n")
+    UP12 = UniformPartition(12)
+    P12 = IntegerPartitions(12)
+    assert all(
+        np.isclose(UP12.distribution()[tuple(P.parts)], 1 / 77) for P in P12
+    )
+
+    print("Random Plancherel partition", "\n")
+    P = PlancherelPartition(100).get_random_element()
+    P.plot()
+    print("\n")
+
     print("Done !")
-
-
-#     # TODO: RandomSubtree, RandomCut, PlancherelPartition, EwensPartition

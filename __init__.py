@@ -14,7 +14,11 @@ from .random.crump_jagers_mode import CrumpJagersMode, PoissonPointProcess
 from .containers.partitions import (
     IntegerPartitions,
 )
-from .random.random_partitions import PlancherelPartition, EwensPartition
+from .random.random_partitions import (
+    PlancherelPartition,
+    EwensPartition,
+    UniformPartition,
+)
 from .tests.tests import (
     test_recursive,
     test_rooted,
@@ -41,6 +45,7 @@ __all__ = [
     "IntegerPartitions",
     "PlancherelPartition",
     "EwensPartition",
+    "UniformPartition",
     "test_recursive",
     "test_rooted",
     "test_partition",

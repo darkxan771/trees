@@ -4,9 +4,19 @@ import numpy.random as rand
 from collections import defaultdict
 from scipy.special import factorial
 from typing import Sequence, Callable
+
+from scipy.stats import boltzmann
 from ..abstraction.helpers import standardisation
 from ..abstraction.partition import IntegerPartition
 from ..containers.partitions import IntegerPartitions
+from .boltzmann_partition import find_x_for_n, boltzmann_sampler
+
+
+def probability_uniform(L: IntegerPartition) -> float:
+    """
+    Returns the probability of L under the Plancherel measure.
+    """
+    return float(1 / IntegerPartitions(L.size).cardinality())
 
 
 def probability_plancherel(L: IntegerPartition) -> float:
@@ -51,6 +61,18 @@ def _RSK_P(w: Sequence[int]) -> list:
     return res
 
 
+def generate_uniform(n: int) -> IntegerPartition:
+    """
+    Generates a random integer partition with size n and
+    uniform distribution.
+    """
+    x = find_x_for_n(n)
+    res = boltzmann_sampler(x)
+    while res.size != n:
+        res = boltzmann_sampler(x)
+    return res
+
+
 def generate_plancherel(n: int) -> IntegerPartition:
     """
     Generates a random integer partition with size n and
@@ -79,14 +101,16 @@ def generate_ewens(n: int, theta: float) -> IntegerPartition:
 
 
 compute_probabilities: dict[str, Callable] = {
-    "plancherel": (lambda L, N: probability_plancherel(L)),
+    "plancherel": (lambda L, T: probability_plancherel(L)),
     "ewens": probability_ewens,
+    "uniform": (lambda L, T: probability_uniform(L)),
 }
 
 
 generate_random: dict[str, Callable] = {
-    "plancherel": (lambda n, N: generate_plancherel(n)),
+    "plancherel": (lambda n, T: generate_plancherel(n)),
     "ewens": generate_ewens,
+    "uniform": (lambda n, T: generate_uniform(n)),
 }
 
 
@@ -104,12 +128,21 @@ class RandomPartition:
         return res
 
     def probability(self, L: IntegerPartition) -> float:
+        """
+        Computes the probability of L under the prescribed
+        distribution.
+        """
         if L.size == self.size:
             return compute_probabilities[self.name](L, self.parameter)
         else:
             return float(0)
 
     def distribution(self) -> defaultdict:
+        """
+        Returns a dictionary with items (L, probability[L]), where L runs
+        over the set of integer partitions with size n, and probability[L]
+        is the probability of L under the prescribed distribution.
+        """
         return defaultdict(
             float,
             {
@@ -119,7 +152,15 @@ class RandomPartition:
         )
 
     def get_random_element(self) -> IntegerPartition:
+        """
+        Picks at random an integer partition under the prescribed
+        distribution.
+        """
         return generate_random[self.name](self.size, self.parameter)
+
+
+def UniformPartition(n: int):
+    return RandomPartition(n, "uniform")
 
 
 def PlancherelPartition(n: int):

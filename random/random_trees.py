@@ -3,13 +3,13 @@ import numpy as np
 import numpy.random as rand
 
 from collections import defaultdict
-from typing import Callable
+from typing import Callable, Protocol
 from scipy.stats import poisson
 from scipy.special import factorial
 from ..recursive.recursive_tree import RecursiveTree
 from ..rooted.rooted_tree import RootedTree
 from ..containers.trees import RootedTrees, RecursiveTrees
-from .boltzmann import compute_values, find_x_for_n
+from .boltzmann_tree import compute_values, find_x_for_n
 
 
 def _random_pairs(n: int) -> tuple[np.ndarray, np.ndarray]:
@@ -30,18 +30,21 @@ def poisson_galton_watson(mu: float) -> tuple[int, list]:
     return size, subs
 
 
-class RandomTree:
+class RandomTree(Protocol):
     """
     A generic class for distributions of random trees (either rooted
     unlabelled trees, or rooted recursive trees).
     """
 
-    def __init__(self, n: int, type: str = "recursive"):
-        self.size = n
-        self.type = type
+    size: int
+    type: str = "recursive"
+    name: str = "Random"
 
     def __repr__(self):
-        return f"Random {self.type} tree with size {self.size}"
+        res = f"{self.name} {self.type} tree"
+        if self.size > 0:
+            res += f"with size {self.size}"
+        return res
 
     def container(self) -> RootedTrees | RecursiveTrees:
         """
@@ -53,14 +56,7 @@ class RandomTree:
             return RootedTrees(self.size)
 
     def probability(self, T) -> float:
-        """
-        Returns the probability of the tree T under
-        the distribution considered.
-        """
-        if T in self.container():
-            return float(1 / self.container().cardinality())
-        else:
-            return float(0)
+        ...
 
     def distribution(self) -> defaultdict:
         """
@@ -90,7 +86,7 @@ class RandomTree:
         return res
 
     def get_random_element(self) -> RootedTree | RecursiveTree:
-        raise NotImplementedError
+        ...
 
 
 class DeterministicRecursiveTree(RandomTree):
@@ -101,6 +97,7 @@ class DeterministicRecursiveTree(RandomTree):
     def __init__(self, T: RecursiveTree):
         self.size = T.size[0]
         self.type = "recursive"
+        self.name = "Deterministic"
         self.tree = T
 
     def __repr__(self):
@@ -129,6 +126,7 @@ class RandomSubtree(RandomTree):
     def __init__(self, U: RandomTree):
         self.size = 0
         self.type = "recursive"
+        self.name = "Random"
         self.supertree = U
         if not U.type == "recursive":
             raise ValueError("U is not a random tree with recursive type")
@@ -174,12 +172,14 @@ class RandomSubtree(RandomTree):
 
 class RandomCut(RandomTree):
     """
-    Random cut T of a supertree U, which can itself be random.
+    Random cut T of a supertree U, which can itself be random (but with
+    fixed size).
     """
 
     def __init__(self, U: RandomTree):
         self.size = 0
         self.type = "recursive"
+        self.name = "Random"
         self.supertree = U
         if not U.type == "recursive":
             raise ValueError("T is not a random tree with recursive type")
@@ -230,9 +230,17 @@ class UniformRootedTree(RandomTree):
     def __init__(self, n: int):
         self.size = n
         self.type = "rooted"
+        self.name = "Uniform"
 
-    def __repr__(self):
-        return f"Uniform Rooted Tree with size {self.size}"
+    def probability(self, T: RootedTree) -> float:
+        """
+        Returns the probability of the rooted tree T under the
+        uniform distribution.
+        """
+        if T.size == self.size:
+            return float(1 / RootedTrees(self.size).cardinality())
+        else:
+            return float(0)
 
     def _sampler_with_precomputed(
         self, values, i: int, pointed: bool = False
@@ -330,8 +338,10 @@ class PlancherelRecursiveTree(RandomTree):
     Class of Plancherel-distributed random recursive trees with n nodes.
     """
 
-    def __repr__(self):
-        return f"Plancherel Recursive Tree with size {self.size}"
+    def __init__(self, n: int):
+        self.size = n
+        self.type = "recursive"
+        self.name = "Plancherel"
 
     def probability(self, T: RecursiveTree) -> float:
         """
@@ -370,8 +380,20 @@ class UniformRecursiveTree(RandomTree):
     Class of uniformly distributed random recursive trees with n nodes.
     """
 
-    def __repr__(self):
-        return f"Uniform Recursive Tree with size {self.size}"
+    def __init__(self, n: int):
+        self.size = n
+        self.type = "recursive"
+        self.name = "Uniform"
+
+    def probability(self, T: RecursiveTree) -> float:
+        """
+        Returns the probability of the recursive tree T under
+        the uniform distribution.
+        """
+        if T.size[0] == self.size:
+            return float(1 / RecursiveTrees(self.size).cardinality())
+        else:
+            return float(0)
 
     def get_random_element(self) -> RecursiveTree:
         """
@@ -394,10 +416,8 @@ class WeightedRecursiveTree(RandomTree):
     def __init__(self, n: int, weight: Callable[[int], float]):
         self.size = n
         self.type = "recursive"
+        self.name = "Weighted"
         self.weight = weight
-
-    def __repr__(self):
-        return f"Weighted Recursive Tree with size {self.size}"
 
     def probability(self, T: RecursiveTree) -> float:
         """

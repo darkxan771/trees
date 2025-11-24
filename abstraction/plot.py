@@ -8,6 +8,7 @@ from matplotlib.patches import Circle
 from matplotlib.axes._axes import Axes
 from .tree import Tree
 from ..recursive.recursive_tree import RecursiveTree
+from .partition import IntegerPartition
 
 
 ###########
@@ -179,3 +180,36 @@ def draw_tree_on_ax(T: Tree, ax0: Axes, **options) -> None:
         nx.draw_networkx(Tn, ax=ax0, pos=pos0, labels=L, **G.options)
     if G.style in ["circular", "log-circular", "natural"]:
         ax0.set_aspect(1)
+
+
+#######################
+# Drawing a partition #
+#######################
+
+
+def draw_partition_on_ax(
+    P: IntegerPartition, ax0: Axes, style: str = "french"
+) -> None:
+    ax0.set_axis_off()
+    ax0.set_aspect(1)
+    if style == "french":
+        ax0.plot([0, 0, P.parts[0]], [P.length, 0, 0], color="k")
+        for j, p in enumerate(P.parts):
+            for i in range(p):
+                ax0.plot([i + 1, i + 1, i], [j, j + 1, j + 1], color="k")
+    if style == "english":
+        ax0.plot([0, 0, P.parts[0]], [-P.length, 0, 0], color="k")
+        for j, p in enumerate(P.parts):
+            for i in range(p):
+                ax0.plot([i + 1, i + 1, i], [-j, -j - 1, -j - 1], color="k")
+    if style == "russian":
+        ax0.plot(
+            [-P.length, 0, P.parts[0]], [P.length, 0, P.parts[0]], color="k"
+        )
+        for j, p in enumerate(P.parts):
+            for i in range(p):
+                ax0.plot(
+                    [i + 1 - j, i - j, i - j - 1],
+                    [i + 1 + j, i + 2 + j, i + 1 + j],
+                    color="k",
+                )
