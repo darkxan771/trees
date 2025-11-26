@@ -1,10 +1,10 @@
 import numpy as np
 
-from ..recursive.recursive_tree import RecursiveTree
-from ..rooted.rooted_tree import RootedTree
-from ..random.boltzmann_tree import generating_series_T
+from ..recursive import RecursiveTree
+from ..rooted import RootedTree
 from ..recursive.conversions import permutation_to_code
 from ..rooted.conversions import code_to_nested_list
+from ..boltzmann.boltzmann_tree import generating_series_T
 from scipy.special import factorial
 from itertools import chain, count
 from collections.abc import Sequence
@@ -202,21 +202,6 @@ class RecursiveTrees:
             _ = T.KP_insertion_at_weight(v[0], v[1])
         return T
 
-    def get_random_element(self) -> RecursiveTree:
-        """
-        Picks a recursive tree uniformly at random.
-        """
-        from ..random.random_trees import (
-            UniformRecursiveTree,
-        )
-
-        if self.order == 0:
-            raise InfiniteSetError(
-                "No probability distribution defined on the infinite set."
-            )
-        else:
-            return UniformRecursiveTree(self.order).get_random_element()
-
 
 class RootedTrees:
     """
@@ -277,13 +262,3 @@ class RootedTrees:
         Returns the rooted tree corresponding to the nested list.
         """
         return RootedTree([RootedTrees().from_nested_list(k) for k in L])
-
-    def get_random_element(self) -> RootedTree:
-        """
-        Generates a uniformly distributed random rooted tree with size n.
-        """
-        from ..random.random_trees import UniformRootedTree
-
-        if self.order == 0:
-            raise InfiniteSetError("Infinite set")
-        return UniformRootedTree(self.order).get_random_element()

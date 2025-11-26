@@ -1,0 +1,21 @@
+[project]
+
+name = "eternitree"
+version = "0.1"
+authors = [{name="Pierre-Loïc Méliot", email="pierreloic.meliot@gmail.com"}]
+description = "A package to manipulate large (random) rooted trees"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+license-files = ["LICENSE"]
+
+[project.urls]
+Homepage = "https://github.com/darkxan771/trees"
+
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"

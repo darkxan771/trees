@@ -1,5 +1,7 @@
 import numpy as np
+import numpy.random as rand
 from scipy.optimize import brentq
+from scipy.stats import poisson
 
 
 def generating_series_T(N: int) -> list[int]:
@@ -155,3 +157,35 @@ def compute_values(x: float) -> list[float]:
     Compute the values T(x**k) for k <= 50.
     """
     return [float(0)] + [eval_T(x**k) for k in range(1, 51)]
+
+
+def sampler_with_precomputed(values, i: int, pointed: bool = False) -> list:
+    div_range = range(1, 50 // i + 1)
+    N = [0] + [poisson(values[k * i] / k).rvs() for k in div_range]
+    res = []
+    if i == 1 and pointed:
+        P = np.array(values)
+        P = P / np.sum(P)
+        K = rand.choice(len(P), p=P)
+        res += [sampler_with_precomputed(values, K)] * K
+    for k in div_range:
+        for _ in range(N[k]):
+            res += [sampler_with_precomputed(values, k * i)] * k
+    return res
+
+
+def boltzmann_sampler(x: float, pointed: bool = False) -> list:
+    """
+    Picks at random a rooted unlabelled tree (the result is given as
+    a nested list).
+
+    Each tree T has probability x^{|T|} / T(x), where T(x) is the
+    generating series of the species of rooted unlabelled trees.
+
+    If the argument pointed is set to True, the random tree has now
+    probability |T| x^{|T|} / T.(x), where T.(x) = x T'(x) is the
+    generating series of the species of cycle-pointed rooted unlabelled
+    trees. This reduces the variance of the size of T.
+    """
+    values = compute_values(x)
+    return sampler_with_precomputed(values, 1, pointed)

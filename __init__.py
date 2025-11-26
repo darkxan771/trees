@@ -1,25 +1,24 @@
-from .recursive.recursive_tree import RecursiveTree
-from .rooted.rooted_tree import RootedTree
-from .containers.trees import RecursiveTrees, RootedTrees
-from .abstraction.partition import IntegerPartition
-from .random.random_trees import (
+from .recursive import RecursiveTree
+from .rooted import RootedTree
+from .containers import RecursiveTrees, RootedTrees, IntegerPartitions
+from .abstraction import IntegerPartition
+from .random import (
     PlancherelRecursiveTree,
     UniformRecursiveTree,
     UniformRootedTree,
     WeightedRecursiveTree,
+    EwensRecursiveTree,
+    CrumpJagersModeTree,
     RandomSubtree,
     RandomCut,
-)
-from .random.crump_jagers_mode import CrumpJagersMode, PoissonPointProcess
-from .containers.partitions import (
-    IntegerPartitions,
-)
-from .random.random_partitions import (
     PlancherelPartition,
     EwensPartition,
     UniformPartition,
+    CrumpJagersModeProcess,
+    PointProcess,
+    PoissonPointProcess,
 )
-from .tests.tests import (
+from .tests import (
     test_recursive,
     test_rooted,
     test_partition,
@@ -37,9 +36,12 @@ __all__ = [
     "UniformRecursiveTree",
     "UniformRootedTree",
     "WeightedRecursiveTree",
+    "EwensRecursiveTree",
+    "CrumpJagersModeTree",
     "RandomSubtree",
     "RandomCut",
-    "CrumpJagersMode",
+    "CrumpJagersModeProcess",
+    "PointProcess",
     "PoissonPointProcess",
     "IntegerPartition",
     "IntegerPartitions",

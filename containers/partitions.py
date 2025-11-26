@@ -1,5 +1,5 @@
-from ..abstraction.partition import IntegerPartition
-from ..random.boltzmann_partition import generating_series_P
+from ..abstraction import IntegerPartition
+from ..boltzmann.boltzmann_partition import generating_series_P
 
 
 class _IntegerPartitionsIterator_n:
@@ -70,11 +70,3 @@ class IntegerPartitions:
         = 1/n sum([d * P[n-k] for k in 1..n and for d | k]).
         """
         return int(generating_series_P(self.size)[-1])
-
-    def get_random_element(self) -> IntegerPartition:
-        """
-        Generates a uniformly distributed random partition with size n.
-        """
-        from ..random.random_partitions import UniformPartition
-
-        return UniformPartition(self.size).get_random_element()

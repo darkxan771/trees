@@ -4,12 +4,10 @@ import numpy.random as rand
 from collections import defaultdict
 from scipy.special import factorial
 from typing import Sequence, Callable
-
-from scipy.stats import boltzmann
 from ..abstraction.helpers import standardisation
-from ..abstraction.partition import IntegerPartition
-from ..containers.partitions import IntegerPartitions
-from .boltzmann_partition import find_x_for_n, boltzmann_sampler
+from ..abstraction import IntegerPartition
+from ..containers import IntegerPartitions
+from ..boltzmann.boltzmann_partition import find_x_for_n, boltzmann_sampler
 
 
 def probability_uniform(L: IntegerPartition) -> float:

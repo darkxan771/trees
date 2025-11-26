@@ -3,7 +3,7 @@ import networkx as nx
 from collections.abc import Sequence
 from typing import Callable
 from .rooted_tree import RootedTree
-from ..recursive.recursive_tree import RecursiveTree
+from ..recursive import RecursiveTree
 
 
 def _c_flatten(data):

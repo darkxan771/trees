@@ -1,18 +1,18 @@
 import numpy as np
 
 
-from ..recursive.recursive_tree import RecursiveTree
-from ..containers.trees import RootedTrees, RecursiveTrees
-from ..random.random_trees import (
+from ..recursive import RecursiveTree
+from ..containers import RootedTrees, RecursiveTrees, IntegerPartitions
+from ..random import (
     UniformRootedTree,
     UniformRecursiveTree,
     PlancherelRecursiveTree,
+    UniformPartition,
+    PlancherelPartition,
 )
-from ..abstraction.partition import (
+from ..abstraction import (
     IntegerPartition,
 )
-from ..containers.partitions import IntegerPartitions
-from ..random.random_partitions import UniformPartition, PlancherelPartition
 
 
 def test_recursive():

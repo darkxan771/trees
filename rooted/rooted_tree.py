@@ -3,8 +3,7 @@ import numpy as np
 from scipy.special import factorial
 from collections import defaultdict
 from typing import Any, Callable
-from ..abstraction.tree import Tree
-from ..abstraction.partition import IntegerPartition
+from ..abstraction import Tree, IntegerPartition
 
 
 class RootedTree(Tree):

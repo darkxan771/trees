@@ -1,8 +1,7 @@
 # TODO
 
 programs:
-- a better crump_jagers_mode
-
+- setuptools?
 
 maths:
 - expectation and limit law for the profile (at height alpha log n)

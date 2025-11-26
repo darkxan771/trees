@@ -74,6 +74,6 @@ class Tree(Protocol):
         - labels: "empty", "simple", "with_weights", "double".
         - with_levels: bool.
         """
-        fig, ax0 = plt.subplots(figsize=(8, 8))
+        _, ax0 = plt.subplots(figsize=(8, 8))
         self.draw_on_ax(ax0, **options)
         plt.show()

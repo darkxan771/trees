@@ -7,7 +7,7 @@ from networkx import spring_layout
 from matplotlib.patches import Circle
 from matplotlib.axes._axes import Axes
 from .tree import Tree
-from ..recursive.recursive_tree import RecursiveTree
+from ..recursive import RecursiveTree
 from .partition import IntegerPartition
 
 

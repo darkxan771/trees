@@ -1,10 +1,23 @@
 import numpy as np
 import scipy.stats as scs
+import matplotlib.pyplot as plt
 
-from copy import deepcopy
-from ..recursive.recursive_tree import RecursiveTree
+from matplotlib.patches import Circle
+from scipy.optimize import brentq
+from scipy.integrate import quad
+from typing import Callable
+from ..recursive import RecursiveTree
 
-# from .random_trees import RandomTree
+
+def inverse_function(F: Callable[[float], float]) -> Callable[[float], float]:
+    def inv(x: float) -> float:
+        return brentq(lambda t: F(t) - x, 0, 1e6, full_output=True)[0]
+
+    return inv
+
+
+def EXP():
+    return scs.expon(scale=1).rvs()
 
 
 class PointProcess:
@@ -14,8 +27,13 @@ class PointProcess:
     computed times and returns the next random time.
     """
 
-    def __init__(self, next_time, n_prep: str = "", n_app: str = ""):
-        self.next = next_time
+    def __init__(
+        self,
+        next_time: Callable[[list], float] = (lambda T: ([0] + T)[-1] + EXP()),
+        n_prep: str = "Standard Poisson",
+        n_app: str = "",
+    ):
+        self.next_time = next_time
         self.times = []
         self.name_prepend = n_prep
         self.name_append = n_app
@@ -27,7 +45,7 @@ class PointProcess:
         return self
 
     def __next__(self):
-        self.times.append(self.next(self.times))
+        self.times.append(self.next_time(self.times))
         return self.times[-1]
 
     def get_random_element(self, T: float) -> np.ndarray:
@@ -39,19 +57,40 @@ class PointProcess:
             _ = next(self)
         return np.array(self.times[:-1])
 
+    def plot(self, T: float) -> None:
+        """
+        Plots a sample of the point process on the interval [0,T].
+        """
+        data = self.get_random_element(T)
+        _, ax = plt.subplots()
+        ax.plot([0, T], [0, 0], color="k")
+        for t in data:
+            ax.add_patch(Circle((t, 0), 0.1, fill=True, color="b", zorder=3))
+        ax.set_xticks([0, T])
+        ax.set_xlim(0, T)
+        ax.set_ylim(-1, 1)
+        ax.get_yaxis().set_visible(False)
+        ax.set_aspect(1)
+        ax.set_axisbelow(True)
+        plt.show()
 
-def PoissonPointProcess(L: float = 1) -> PointProcess:
+
+class PoissonPointProcess(PointProcess):
     """
-    Returns a Poisson point process with intensity L.
+    A Poisson point process with intensity f(x) dx.
     """
-    return PointProcess(
-        lambda times: ([0] + times)[-1] + scs.expon(scale=1 / L).rvs(),
-        n_prep="Poisson",
-        n_app=f"with intensity {L}",
-    )
+
+    def __init__(self, f: Callable[[float], float] = (lambda x: 1)):
+        self.f = f
+        self.F = lambda x: quad(f, 0, x)[0]
+        self.inv = inverse_function(self.F)
+        self.next_time = lambda L: self.inv(self.F(([0] + L)[-1]) + EXP())
+        self.times = []
+        self.name_prepend = "Poisson"
+        self.name_append = ""
 
 
-class CrumpJagersMode:
+class CrumpJagersModeProcess:
     """
     A Crump-Jagers-Mode branching process. It takes as an argument a point
     process pp, such that if i is a node of the tree born at time t, then
@@ -64,7 +103,12 @@ class CrumpJagersMode:
     def __repr__(self):
         return f"CJM branching process with births given by a {self.pp}"
 
-    def get_random_element(self, T: float) -> RecursiveTree:
+    def __call__(self, N: int):
+        from .random_trees import CrumpJagersModeTree
+
+        return CrumpJagersModeTree(N, self.pp)
+
+    def grow_up_to_time(self, T: float) -> RecursiveTree:
         """
         Samples the Crump-Jagers-Mode branching process until time T.
         """
@@ -84,28 +128,11 @@ class CrumpJagersMode:
 
     def grow_up_to_size(self, N: int) -> RecursiveTree:
         """
-        Samples the Crump-Jagers-Mode branching process until one obtains
-        a recursive tree with size N.
+        Samples the Crump-Jagers-Mode branching process until
+        it reaches a size N.
         """
-        R = RecursiveTree(max_size=N)
-        Lpp = [deepcopy(self.pp)]
-        birth = [0]
-        Lpp[0].times = []
-        next_computed = []
-        n = 1
-        while n < N:
-            for i in range(n):
-                if i not in [x[0] for x in next_computed]:
-                    next_computed.append((i, birth[i] + next(Lpp[i])))
-            next_computed.sort(key=lambda x: x[1])
-            i, t = next_computed.pop(0)
-            R.add_node(i)
-            n += 1
-            birth.append(t)
-            Lpp.append(deepcopy(self.pp))
-            Lpp[-1].times = []
-        last = birth[N - 1]
-        for i in range(N):
-            L = [birth[i] + t for t in Lpp[i].times if birth[i] + t < last]
-            R.additional[i] = np.array(L)
-        return R
+        T = self(N).get_random_element()
+        if isinstance(T, RecursiveTree):
+            return T
+        else:
+            raise ValueError

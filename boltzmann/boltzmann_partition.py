@@ -2,7 +2,7 @@ import numpy as np
 import scipy.stats as scs
 from scipy.optimize import brentq
 
-from ..abstraction.partition import IntegerPartition
+from ..abstraction import IntegerPartition
 
 
 def generating_series_P(N: int) -> list[int]:
@@ -35,7 +35,7 @@ def expectation_size(x: float) -> float:
         if term < 1e-50:
             break
         k += 1
-    return s
+    return float(s)
 
 
 def find_x_for_n(n: int) -> float:

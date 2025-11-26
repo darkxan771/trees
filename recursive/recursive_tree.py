@@ -2,8 +2,7 @@ from __future__ import annotations
 import numpy as np
 import numpy.random as rand
 from typing import Any, Callable, Self
-from ..abstraction.tree import Tree
-from ..abstraction.partition import IntegerPartition
+from ..abstraction import Tree, IntegerPartition
 
 
 compute_data: dict[str, Callable] = {
@@ -272,24 +271,24 @@ class RecursiveTree(Tree):
         else:
             return rand.randint(0, n)
 
-    # def random_subtree(self) -> RandomTree:
-    #     """
-    #     Picks a random node and returns the corresponding recursive subtree.
-    #     """
-    #     from ..random.random_trees import (
-    #         DeterministicRecursiveTree,
-    #         RandomSubtree,
-    #     )
+    def random_subtree(self):
+        """
+        Picks a random node and returns the corresponding recursive subtree.
+        """
+        from ..random.random_trees import (
+            DeterministicRecursiveTree,
+            RandomSubtree,
+        )
 
-    #     return RandomSubtree(DeterministicRecursiveTree(self))
+        return RandomSubtree(DeterministicRecursiveTree(self))
 
-    # def random_cut(self) -> RandomTree:
-    #     """
-    #     Picks a random node and returns the corresponding cut.
-    #     """
-    #     from ..random.random_trees import DeterministicRecursiveTree, RandomCut
+    def random_cut(self):
+        """
+        Picks a random node and returns the corresponding cut.
+        """
+        from ..random.random_trees import DeterministicRecursiveTree, RandomCut
 
-    #     return RandomCut(DeterministicRecursiveTree(self))
+        return RandomCut(DeterministicRecursiveTree(self))
 
     def random_leaf(self, subtree: list = []) -> int:
         """

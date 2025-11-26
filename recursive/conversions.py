@@ -4,7 +4,7 @@ import pandas as pd
 from typing import Callable
 
 from .recursive_tree import RecursiveTree
-from ..rooted.rooted_tree import RootedTree
+from ..rooted import RootedTree
 
 
 def tree_to_code(T: RecursiveTree) -> tuple:

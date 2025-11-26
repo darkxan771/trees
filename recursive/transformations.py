@@ -1,7 +1,7 @@
 import numpy as np
+from copy import deepcopy
 from .recursive_tree import RecursiveTree
 from ..abstraction.helpers import standardisation
-from copy import deepcopy
 
 
 def tree_subtree(
