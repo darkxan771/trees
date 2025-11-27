@@ -1,3 +1,5 @@
+# Defines an IntegerPartitions container
+
 from ..abstraction import IntegerPartition
 from ..boltzmann.boltzmann_partition import generating_series_P
 

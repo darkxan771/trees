@@ -1,3 +1,6 @@
+# Defines the RootedTrees and RecursiveTrees containers
+# DoubleRecursiveTrees is a particular instance of RecursiveTrees
+
 import numpy as np
 
 from ..recursive import RecursiveTree

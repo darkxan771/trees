@@ -17,6 +17,8 @@ from .random import (
     CrumpJagersModeProcess,
     PointProcess,
     PoissonPointProcess,
+    PoissonDirichlet,
+    LogPoissonDirichlet,
 )
 from .tests import (
     test_recursive,
@@ -43,6 +45,8 @@ __all__ = [
     "CrumpJagersModeProcess",
     "PointProcess",
     "PoissonPointProcess",
+    "PoissonDirichlet",
+    "LogPoissonDirichlet",
     "IntegerPartition",
     "IntegerPartitions",
     "PlancherelPartition",

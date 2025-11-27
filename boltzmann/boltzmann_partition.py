@@ -1,3 +1,5 @@
+# Constructs a Boltzmann sampler for uniform random partitions
+
 import numpy as np
 import scipy.stats as scs
 from scipy.optimize import brentq

@@ -1,3 +1,5 @@
+# Constructs a Boltzmann sampler for uniform rooted trees
+
 import numpy as np
 import numpy.random as rand
 from scipy.optimize import brentq

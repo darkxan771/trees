@@ -1,3 +1,5 @@
+# Converts a recursive tree to another format
+
 import numpy as np
 import networkx as nx
 import pandas as pd

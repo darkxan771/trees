@@ -1,3 +1,5 @@
+# Defines an abstract class RandomPartition, and various subclasses
+
 import numpy as np
 import numpy.random as rand
 

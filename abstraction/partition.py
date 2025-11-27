@@ -1,3 +1,5 @@
+# Defines the abstract IntegerPartition class
+
 from __future__ import annotations
 import numpy as np
 import matplotlib.pyplot as plt

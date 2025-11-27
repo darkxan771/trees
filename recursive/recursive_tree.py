@@ -1,9 +1,11 @@
+# Defines the class RecursiveTree
+
 from __future__ import annotations
 import numpy as np
 import numpy.random as rand
 from typing import Any, Callable, Self
 from ..abstraction import Tree, IntegerPartition
-
+from ..abstraction.helpers import standardisation
 
 compute_data: dict[str, Callable] = {
     "degree": (
@@ -187,6 +189,31 @@ class RecursiveTree(Tree):
         n = self.size[0]
         self.weight[:n] = np.vectorize(func)(self.weight[:n])
         return self
+
+    def resize(self, k) -> Self:
+        """
+        Removes all nodes after the k-th one. If the tree is double
+        recursive, also recomputes the weights to get a double recursive
+        subtree.
+        """
+        n = self.size[0]
+        if k > n:
+            return self
+        else:
+            self.limit = k
+            new_weight = self.weight[:k]
+            if self.is_double_recursive():
+                new_weight = standardisation(new_weight)
+            new_add = self.additional.copy()
+            for j in range(k, n):
+                _ = new_add.pop(j, None)
+            code = self.convert("code")[: k - 1]
+            self.__init__(max_size=k)
+            for i in code:
+                self.add_node(i)
+            self.weight = new_weight
+            self.additional = new_add
+            return self
 
     def subtree(
         self, k: int, renormalise_weights: bool = False

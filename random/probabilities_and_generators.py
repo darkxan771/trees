@@ -1,8 +1,10 @@
+# Useful functions for the manipulation of random trees
+
 import numpy as np
 import numpy.random as rand
 
 from scipy.special import factorial
-from typing import Any, Callable
+from typing import Callable
 from copy import deepcopy
 from .crump_jagers_mode import PointProcess
 from .random_partitions import EwensPartition

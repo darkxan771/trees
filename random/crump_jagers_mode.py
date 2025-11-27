@@ -1,93 +1,8 @@
-import numpy as np
-import scipy.stats as scs
-import matplotlib.pyplot as plt
+# Defines a CrumpJagersModeProcess
+# It can be constructed up to a certain time, or up to a certain size
 
-from matplotlib.patches import Circle
-from scipy.optimize import brentq
-from scipy.integrate import quad
-from typing import Callable
 from ..recursive import RecursiveTree
-
-
-def inverse_function(F: Callable[[float], float]) -> Callable[[float], float]:
-    def inv(x: float) -> float:
-        return brentq(lambda t: F(t) - x, 0, 1e6, full_output=True)[0]
-
-    return inv
-
-
-def EXP():
-    return scs.expon(scale=1).rvs()
-
-
-class PointProcess:
-    """
-    A point process on R+. It is initialized with a function
-    next_time, which takes as argument the list of previously
-    computed times and returns the next random time.
-    """
-
-    def __init__(
-        self,
-        next_time: Callable[[list], float] = (lambda T: ([0] + T)[-1] + EXP()),
-        n_prep: str = "Standard Poisson",
-        n_app: str = "",
-    ):
-        self.next_time = next_time
-        self.times = []
-        self.name_prepend = n_prep
-        self.name_append = n_app
-
-    def __repr__(self):
-        return f"{self.name_prepend} point process on R+ {self.name_append}"
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        self.times.append(self.next_time(self.times))
-        return self.times[-1]
-
-    def get_random_element(self, T: float) -> np.ndarray:
-        """
-        Samples the point process on the interval [0,T].
-        """
-        self.times = []
-        while (self.times == []) or (self.times[-1] < T):
-            _ = next(self)
-        return np.array(self.times[:-1])
-
-    def plot(self, T: float) -> None:
-        """
-        Plots a sample of the point process on the interval [0,T].
-        """
-        data = self.get_random_element(T)
-        _, ax = plt.subplots()
-        ax.plot([0, T], [0, 0], color="k")
-        for t in data:
-            ax.add_patch(Circle((t, 0), 0.1, fill=True, color="b", zorder=3))
-        ax.set_xticks([0, T])
-        ax.set_xlim(0, T)
-        ax.set_ylim(-1, 1)
-        ax.get_yaxis().set_visible(False)
-        ax.set_aspect(1)
-        ax.set_axisbelow(True)
-        plt.show()
-
-
-class PoissonPointProcess(PointProcess):
-    """
-    A Poisson point process with intensity f(x) dx.
-    """
-
-    def __init__(self, f: Callable[[float], float] = (lambda x: 1)):
-        self.f = f
-        self.F = lambda x: quad(f, 0, x)[0]
-        self.inv = inverse_function(self.F)
-        self.next_time = lambda L: self.inv(self.F(([0] + L)[-1]) + EXP())
-        self.times = []
-        self.name_prepend = "Poisson"
-        self.name_append = ""
+from .point_processes import PointProcess
 
 
 class CrumpJagersModeProcess:
@@ -112,6 +27,7 @@ class CrumpJagersModeProcess:
         """
         Samples the Crump-Jagers-Mode branching process until time T.
         """
+        self.pp.reset()
         R = RecursiveTree()
         n = 0
         d = {0: self.pp.get_random_element(T)}

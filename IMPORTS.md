@@ -14,7 +14,8 @@ boltzmann: 		boltzmann_partition <- abstraction.partition
 
 _______________
 
-recursive:		recursive_tree <- abstraction.tree, abstraction.partition
+recursive:		recursive_tree <- abstraction.tree, abstraction.partition,
+				abstraction.helpers
 				[local: <- conversions, transformations, random.random_trees]
 
 				conversions <- recursive_tree, rooted.rooted_tree
@@ -49,7 +50,7 @@ random:         random_trees <- recursive.recursive_tree, rooted.rooted_tree,
 				abstraction.partition, 
                 containers.partitions, boltzmann.boltzmann_partition
 
-				crump_jagers_mode <- recursive.recursive_tree
+				crump_jagers_mode <- recursive.recursive_tree, point_processes
 				[local: <- random.trees]
 _______________
 

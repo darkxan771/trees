@@ -1,3 +1,5 @@
+# Converts a rooted tree to another format
+
 import numpy as np
 import networkx as nx
 from collections.abc import Sequence

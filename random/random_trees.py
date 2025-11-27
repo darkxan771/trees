@@ -1,3 +1,5 @@
+# Defines an abstract class RandomTree, and various subclasses
+
 from __future__ import annotations
 
 from collections import defaultdict

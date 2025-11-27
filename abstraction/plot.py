@@ -1,5 +1,6 @@
+# Plots of IntegerPartition and Tree objects
+
 import numpy as np
-import matplotlib.pyplot as plt
 import networkx as nx
 
 from typing import Callable
@@ -141,6 +142,10 @@ class GraphicOptions:
         self.style = self.options.pop("style", "centered")
         self.labels = self.options.pop("labels", "simple")
         self.with_levels = self.options.pop("with_levels", False)
+        if self.options.pop("large", False):
+            self.labels = "empty"
+            self.options["arrows"] = False
+            self.options["node_size"] = 0
 
     def draw_levels_on_ax(self, ax0: Axes, H: int, prof: np.ndarray) -> None:
         col = (0.8, 0.8, 0.8)

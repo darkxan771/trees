@@ -1,3 +1,5 @@
+# Defines the abstract Tree class
+
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns

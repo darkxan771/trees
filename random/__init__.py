@@ -1,3 +1,7 @@
+# Defines all the random objects:
+# trees, branching CMJ processes,
+# partitions and point processes
+
 from .random_trees import (
     RandomSubtree,
     RandomCut,
@@ -14,9 +18,13 @@ from .random_partitions import (
     PlancherelPartition,
 )
 from .crump_jagers_mode import (
+    CrumpJagersModeProcess,
+)
+from .point_processes import (
     PointProcess,
     PoissonPointProcess,
-    CrumpJagersModeProcess,
+    PoissonDirichlet,
+    LogPoissonDirichlet
 )
 
 
@@ -34,5 +42,7 @@ __all__ = [
     "PlancherelPartition",
     "PointProcess",
     "PoissonPointProcess",
+    "LogPoissonDirichlet",
+    "PoissonDirichlet",
     "CrumpJagersModeProcess",
 ]

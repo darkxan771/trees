@@ -1,3 +1,5 @@
+# Defines an abstract class TreeStatistic
+
 import numpy as np
 import matplotlib.pyplot as plt
 
