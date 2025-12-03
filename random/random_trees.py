@@ -4,19 +4,21 @@ from __future__ import annotations
 
 from collections import defaultdict
 from typing import Any, Callable, Protocol
-from ..recursive import RecursiveTree
-from ..rooted import RootedTree
-from ..containers import RootedTrees, RecursiveTrees
+
+from ..abstraction import InfiniteSetError, Tree
 from ..boltzmann.boltzmann_tree import (
     compute_values,
     find_x_for_n,
     sampler_with_precomputed,
 )
+from ..containers import RecursiveTrees, RootedTrees
+from ..recursive import RecursiveTree
+from ..rooted import RootedTree
+from .crump_jagers_mode import PointProcess
 from .probabilities_and_generators import (
     compute_probabilities,
     generators_random_tree,
 )
-from .crump_jagers_mode import PointProcess
 
 
 class RandomTree(Protocol):
@@ -25,14 +27,14 @@ class RandomTree(Protocol):
     unlabelled trees, or rooted recursive trees).
     """
 
-    size: int
+    size: int | None
     treetype: str = "recursive"
     name: str = "Random"
     parameter: Any = None
 
     def __repr__(self):
         res = f"{self.name} {self.treetype} tree"
-        if self.size > 0:
+        if self.size is not None:
             res += f" with size {self.size}"
         return res
 
@@ -45,7 +47,7 @@ class RandomTree(Protocol):
         else:
             return RootedTrees(self.size)
 
-    def probability(self, T) -> float:
+    def probability(self, T: Tree) -> float:
         """
         Computes the probability of T under the prescribed distribution.
         """
@@ -64,7 +66,7 @@ class RandomTree(Protocol):
         Returns a dictionary with items (T, probability[T]), where T is
         identified by its code.
         """
-        if self.size == 0:
+        if self.size is None:
             raise NotImplementedError
         return defaultdict(
             float,
@@ -78,8 +80,8 @@ class RandomTree(Protocol):
         probability[L] is the probability of L being the list of
         sizes of the subtrees of a random tree.
         """
-        if self.size == 0:
-            raise NotImplementedError
+        if self.size is None:
+            raise InfiniteSetError
         res = defaultdict(float)
         for T in self.container():
             p = tuple(T.subtrees_partition.parts)
@@ -118,8 +120,6 @@ class RandomSubtree(RandomTree):
 
     def __init__(self, U: RandomTree):
         self.size = 0
-        self.treetype = "recursive"
-        self.name = "Subtree"
         self.parameter = U
         if not U.treetype == "recursive":
             raise ValueError("U is not a random tree with recursive treetype")
@@ -136,9 +136,7 @@ class RandomSubtree(RandomTree):
         n = self.parameter.size
         for k in range(n):
             for T in RecursiveTrees(n):
-                d[T.subtree(k).convert("code")] += (
-                    self.parameter.probability(T) / n
-                )
+                d[T.subtree(k).convert("code")] += self.parameter.probability(T) / n
         return d
 
 
@@ -193,7 +191,9 @@ class UniformRootedTree(RandomTree):
         size N.
         """
         n = self.size
-        if n == 1:
+        if n is None:
+            raise NotImplementedError
+        elif n == 1:
             return RootedTree([])
         elif n == 2:
             return RootedTree([RootedTree([])])
@@ -238,6 +238,8 @@ class UniformRecursiveTree(RandomTree):
         self.treetype = "recursive"
         self.name = "Uniform"
 
+        self.name = "Uniform"
+
 
 class WeightedRecursiveTree(RandomTree):
     """
@@ -277,5 +279,6 @@ class CrumpJagersModeTree(RandomTree):
         self.name = "Crump-Jagers-Mode"
         self.parameter = pp
 
-    def probability(self, T: RecursiveTree) -> float:
+    def probability(self, T: Tree) -> float:
+        _ = T
         raise NotImplementedError

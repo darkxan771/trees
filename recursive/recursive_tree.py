@@ -1,18 +1,19 @@
 # Defines the class RecursiveTree
 
 from __future__ import annotations
+
+from typing import Any, Callable, Self
+
 import numpy as np
 import numpy.random as rand
-from typing import Any, Callable, Self
-from ..abstraction import Tree, IntegerPartition
+
+from ..abstraction import IntegerPartition, Tree
 from ..abstraction.helpers import standardisation
 
 compute_data: dict[str, Callable] = {
-    "degree": (
-        lambda T: np.vectorize(lambda L: len(L))(T.children[: T.size[0]])
-    ),
-    "depth": (lambda T: T.depth[: T.size[0]]),
-    "size": (lambda T: T.size[: T.size[0]]),
+    "degree": lambda T: np.vectorize(lambda L: len(L))(T.children[: T.size[0]]),
+    "depth": lambda T: T.depth[: T.size[0]],
+    "size": lambda T: T.size[: T.size[0]],
 }
 
 
@@ -90,9 +91,7 @@ class RecursiveTree(Tree):
         The profile of the tree (number of nodes on each level).
         """
         h = self.height
-        return np.array(
-            [np.count_nonzero(self.depth == d) for d in range(h + 1)]
-        )
+        return np.array([np.count_nonzero(self.depth == d) for d in range(h + 1)])
 
     @property
     def subtrees_partition(self) -> IntegerPartition:
@@ -172,9 +171,7 @@ class RecursiveTree(Tree):
         """
         n = self.size[0]
         if np.all(np.sort(self.weight[:n]) == np.arange(1, n + 1)):
-            return bool(
-                np.all(self.weight[self.parent[1:n]] > self.weight[1:n])
-            )
+            return bool(np.all(self.weight[self.parent[1:n]] > self.weight[1:n]))
         else:
             return False
 
@@ -215,9 +212,7 @@ class RecursiveTree(Tree):
             self.additional = new_add
             return self
 
-    def subtree(
-        self, k: int, renormalise_weights: bool = False
-    ) -> RecursiveTree:
+    def subtree(self, k: int, renormalise_weights: bool = False) -> RecursiveTree:
         """
         Returns the recursive subtree based at k.
 
@@ -228,6 +223,13 @@ class RecursiveTree(Tree):
         from .transformations import tree_subtree
 
         return tree_subtree(self, k, renormalise_weights)
+
+    @property
+    def subtree_list(self) -> list:
+        """
+        The list of subtrees of the tree.
+        """
+        return [self.subtree(k) for k in self.children[0]]
 
     def cut(self, k: int, renormalise_weights: bool = False) -> RecursiveTree:
         """
@@ -268,9 +270,7 @@ class RecursiveTree(Tree):
         - the new node is given the weight J in [1, w(i)].
         - we raise by 1 all the weights j>=J (except for the new node).
         """
-        return self.add_node(
-            i, map_weights=(lambda x: x + int(x >= J)), new_weight=J
-        )
+        return self.add_node(i, map_weights=(lambda x: x + int(x >= J)), new_weight=J)
 
     def KP_insertion_at_weight(self, i: int, J: int) -> Self:
         """

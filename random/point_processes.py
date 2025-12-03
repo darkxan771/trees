@@ -1,13 +1,13 @@
 # Defines an abstract class PointProcess, and various subclasses
 
+from typing import Callable
+
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats as scs
-import matplotlib.pyplot as plt
-
 from matplotlib.patches import Circle
-from scipy.optimize import brentq
 from scipy.integrate import quad
-from typing import Callable
+from scipy.optimize import brentq
 
 
 def inverse_function(F: Callable[[float], float]) -> Callable[[float], float]:
@@ -39,6 +39,8 @@ class PointProcess:
     A point process on R+. It is initialized with a function
     next_time, which takes as argument the list of previously
     computed times and returns the next random time.
+
+    Note: "next" does not mean that the indexing of times is increasing.
     """
 
     def __init__(
@@ -113,17 +115,15 @@ class PoissonDirichlet(PointProcess):
     def __init__(self, theta: float):
         self.theta = theta
         self.times = []
-        self.next_time = lambda L: float(
-            np.prod(1 - np.array(extract_beta(L))) * BETA1(self.theta)
-        )
         self.beta = []
         self.prod = 1
+        self.next_time = lambda T: ([0] + T)[-1] + self.prod * BETA1(self.theta)
         self.name_prepend = "Poisson Dirichlet"
         self.name_append = f"with parameter {self.theta}"
 
     def __next__(self):
         self.beta.append(BETA1(self.theta))
-        self.times.append(([0] + self.times)[-1] + self.beta[-1] * self.prod)
+        self.times.append(([0] + self.times)[-1] + self.prod * self.beta[-1])
         self.prod *= 1 - self.beta[-1]
         return self.times[-1]
 
@@ -145,13 +145,13 @@ class LogPoissonDirichlet(PointProcess):
         self.times = []
         self.beta = []
         self.prod = 1
-        self.next_time = lambda L: 0
+        self.next_time = lambda _: -np.log(self.prod * BETA1(self.theta))
         self.name_prepend = "Log Poisson Dirichlet"
         self.name_append = f"with parameter {self.theta}"
 
     def __next__(self):
         self.beta.append(BETA1(self.theta))
-        self.times.append(-np.log(self.beta[-1] * self.prod))
+        self.times.append(-np.log(self.prod * self.beta[-1]))
         self.prod *= 1 - self.beta[-1]
         return self.times[-1]
 

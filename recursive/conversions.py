@@ -1,12 +1,13 @@
 # Converts a recursive tree to another format
 
-import numpy as np
-import networkx as nx
-import pandas as pd
 from typing import Callable
 
-from .recursive_tree import RecursiveTree
+import networkx as nx
+import numpy as np
+import pandas as pd
+
 from ..rooted import RootedTree
+from .recursive_tree import RecursiveTree
 
 
 def tree_to_code(T: RecursiveTree) -> tuple:
@@ -63,8 +64,7 @@ def tree_to_rooted(T: RecursiveTree) -> RootedTree:
     """
     Forgets the labels and weights and returns the rooted tree.
     """
-    subs = T.children[0]
-    return RootedTree([tree_to_rooted(T.subtree(c)) for c in subs])
+    return RootedTree([tree_to_rooted(U) for U in T.subtree_list])
 
 
 def tree_to_dataframe(T: RecursiveTree) -> pd.DataFrame:
@@ -109,7 +109,7 @@ compute_conversions: dict[str, Callable] = {
     "permutation": tree_to_permutation,
     "networkx": tree_to_networkx,
     "rooted": tree_to_rooted,
-    "recursive": (lambda T: T),
+    "recursive": lambda T: T,
     "dataframe": tree_to_dataframe,
     "KP_insertion_array": tree_to_KP_insertion_array,
 }

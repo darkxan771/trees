@@ -1,11 +1,12 @@
 # Defines the abstract Tree class
 
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
+from typing import Any, Callable, Protocol
 
-from typing import Protocol, Any, Callable
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
 from matplotlib.axes._axes import Axes
+
 from .partition import IntegerPartition
 
 sns.set_theme()
@@ -13,40 +14,42 @@ sns.set_theme()
 
 class Tree(Protocol):
     @property
-    def type(self) -> str:
-        ...
+    def type(self) -> str: ...
 
     @property
-    def number_of_vertices(self) -> int:
-        ...
+    def number_of_vertices(self) -> int: ...
 
     @property
     def number_of_edges(self) -> int:
         return self.number_of_vertices - 1
 
     @property
-    def height(self) -> int:
-        ...
+    def height(self) -> int: ...
 
     @property
-    def profile(self) -> np.ndarray:
-        ...
+    def profile(self) -> np.ndarray: ...
+
+    @property
+    def subtree_list(self) -> list: ...
 
     @property
     def subtrees_partition(self) -> IntegerPartition:
-        ...
+        """
+        The integer partition with size n-1 corresponding to the
+        sizes of the subtrees attached to the root.
+        """
+        res = [T.number_of_vertices for T in self.subtree_list]
+        res.sort(reverse=True)
+        return IntegerPartition(res)
 
     @property
-    def weights(self) -> np.ndarray:
-        ...
+    def weights(self) -> np.ndarray: ...
 
     @property
-    def convert(self) -> Callable[[str], Any]:
-        ...
+    def convert(self) -> Callable[[str], Any]: ...
 
     @property
-    def data(self) -> Callable[[str], np.ndarray]:
-        ...
+    def data(self) -> Callable[[str], np.ndarray]: ...
 
     def statistic(self, name: str):
         from .statistic import TreeStatistic

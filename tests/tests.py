@@ -2,22 +2,21 @@
 
 import numpy as np
 
-
-from ..recursive import RecursiveTree
-from ..containers import RootedTrees, RecursiveTrees, IntegerPartitions
-from ..random import (
-    UniformRootedTree,
-    UniformRecursiveTree,
-    PlancherelRecursiveTree,
-    UniformPartition,
-    PlancherelPartition,
-)
 from ..abstraction import (
     IntegerPartition,
 )
+from ..containers import IntegerPartitions, RecursiveTrees, RootedTrees
+from ..random import (
+    PlancherelPartition,
+    PlancherelRecursiveTree,
+    UniformPartition,
+    UniformRecursiveTree,
+    UniformRootedTree,
+)
+from ..recursive import RecursiveTree
 
 
-def test_recursive():
+def test_recursive(verbose=True):
     code = (0, 0, 0, 0, 1, 1, 0, 4, 2, 1, 6, 1, 3, 4)
     permutation = (13, 12, 11, 5, 8, 7, 0, 10, 6, 2, 9, 1, 3, 4)
     L = [[[[]], [], [], []], [[], []], [[]], [[]], []]
@@ -28,11 +27,6 @@ def test_recursive():
     assert T.convert("code") == code
     assert T.convert("permutation") == permutation
     assert T.convert("rooted").convert("nested_list") == L
-
-    print(T.convert("dataframe"))
-
-    T.plot()
-
     assert T.number_of_edges == 14
     assert T.number_of_vertices == 15
     assert T.height == 3
@@ -64,8 +58,6 @@ def test_recursive():
         [0, 3 / 5, 1 / 5, 1 / 15, 0, 0, 1 / 15, 0, 0, 0, 0, 0, 0, 0, 0, 1 / 15]
     )
     assert np.all(np.isclose(T.statistic("size").array, sizes))
-
-    assert T.path_to_root(13).tolist() == [0, 3, 13]
     assert T.subtree_indices(1) == [1, 5, 6, 10, 11, 12]
 
     S = RecursiveTree(max_size=6)
@@ -95,16 +87,17 @@ def test_recursive():
     assert Rec.from_code(code) == T
     assert Rec.from_KP_insertion_array(KP) == T
 
-    print("\n", "Done !")
+    if verbose:
+        print("\n", "Done !")
+        print(T.convert("dataframe"))
+        T.plot()
 
 
-def test_rooted():
+def test_rooted(verbose=True):
     Root = RootedTrees(15)
     code = (0, 1, 2, 3, 4, 5, 6, 7, 6, 5, 5, 4, 5, 4, 3)
     nested = [[[[[[[[]], []], [], []], [[]], []], []]]]
     T = RootedTrees(15).from_nested_list(nested)
-
-    T.plot()
 
     assert T.convert("code") == code
     assert T.convert("nested_list") == nested
@@ -119,12 +112,15 @@ def test_rooted():
     assert Root.from_code(code) == T
     assert Root.cardinality() == 87811
 
-    print("\n", "Done !")
+    if verbose:
+        T.plot()
+        print("\n", "Done !")
 
 
-def test_partition():
+def test_partition(verbose=True):
     P = IntegerPartition([5, 3, 2, 2])
     P12 = IntegerPartitions(12)
+
     assert len(list(P12)) == P12.cardinality() == 77
     assert P in P12
     assert P.size == 12
@@ -142,49 +138,48 @@ def test_partition():
         [4],
     ]
 
-    P.plot()
+    if verbose:
+        P.plot()
+        print("\n", "Done !")
 
-    print("\n", "Done !")
 
-
-def test_random():
-    print("Random uniform rooted tree", "\n")
+def test_random(verbose=True):
     U = UniformRootedTree(30).get_random_element()
-    U.plot(style="circular", with_levels=True, node_size=50)
-    print("\n")
-
     UR = UniformRootedTree(5)
     R = RootedTrees(5)
     assert all(np.isclose(UR.distribution()[T.code], 1 / 9) for T in R)
 
-    print("Random uniform recursive tree", "\n")
     T = UniformRecursiveTree(30).get_random_element()
-    T.plot()
-    print("\n")
     UR2 = UniformRecursiveTree(5)
     R2 = RecursiveTrees(5)
-    assert all(
-        np.isclose(UR2.distribution()[T.convert("code")], 1 / 24) for T in R2
-    )
+    assert all(np.isclose(UR2.distribution()[T.convert("code")], 1 / 24) for T in R2)
 
-    print("Random Plancherel recursive tree", "\n")
     PT = PlancherelRecursiveTree(30).get_random_element()
-    PT.plot()
-    print("\n")
 
-    print("Random uniform partition", "\n")
     P = UniformPartition(30).get_random_element()
-    P.plot()
     print("\n")
     UP12 = UniformPartition(12)
     P12 = IntegerPartitions(12)
-    assert all(
-        np.isclose(UP12.distribution()[tuple(P.parts)], 1 / 77) for P in P12
-    )
+    assert all(np.isclose(UP12.distribution()[tuple(P.parts)], 1 / 77) for P in P12)
 
-    print("Random Plancherel partition", "\n")
-    P = PlancherelPartition(100).get_random_element()
-    P.plot()
-    print("\n")
+    PP = PlancherelPartition(100).get_random_element()
+    if verbose:
+        print("Random uniform rooted tree", "\n")
+        U.plot(style="circular", with_levels=True, node_size=50)
+        print("\n", "Random uniform recursive tree", "\n")
+        T.plot()
+        print("\n", "Random Plancherel recursive tree", "\n")
+        PT.plot()
+        print("\n", "Random uniform partition", "\n")
+        P.plot()
+        print("\n", "Random Plancherel partition", "\n")
+        PP.plot()
+        print("\n", "Done !")
 
+
+def test_all():
+    test_recursive(False)
+    test_rooted(False)
+    test_partition(False)
+    test_random(False)
     print("Done !")

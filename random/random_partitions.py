@@ -1,15 +1,16 @@
 # Defines an abstract class RandomPartition, and various subclasses
 
+from collections import defaultdict
+from typing import Callable, Sequence
+
 import numpy as np
 import numpy.random as rand
-
-from collections import defaultdict
 from scipy.special import factorial
-from typing import Sequence, Callable
-from ..abstraction.helpers import standardisation
+
 from ..abstraction import IntegerPartition
+from ..abstraction.helpers import standardisation
+from ..boltzmann.boltzmann_partition import boltzmann_sampler, find_x_for_n
 from ..containers import IntegerPartitions
-from ..boltzmann.boltzmann_partition import find_x_for_n, boltzmann_sampler
 
 
 def probability_uniform(L: IntegerPartition) -> float:
@@ -101,16 +102,16 @@ def generate_ewens(n: int, theta: float) -> IntegerPartition:
 
 
 compute_probabilities: dict[str, Callable] = {
-    "plancherel": (lambda L, T: probability_plancherel(L)),
+    "plancherel": lambda L, _: probability_plancherel(L),
     "ewens": probability_ewens,
-    "uniform": (lambda L, T: probability_uniform(L)),
+    "uniform": lambda L, _: probability_uniform(L),
 }
 
 
 generate_random: dict[str, Callable] = {
-    "plancherel": (lambda n, T: generate_plancherel(n)),
+    "plancherel": lambda n, _: generate_plancherel(n),
     "ewens": generate_ewens,
-    "uniform": (lambda n, T: generate_uniform(n)),
+    "uniform": lambda n, _: generate_uniform(n),
 }
 
 
@@ -145,10 +146,7 @@ class RandomPartition:
         """
         return defaultdict(
             float,
-            {
-                tuple(L.parts): self.probability(L)
-                for L in IntegerPartitions(self.size)
-            },
+            {tuple(L.parts): self.probability(L) for L in IntegerPartitions(self.size)},
         )
 
     def get_random_element(self) -> IntegerPartition:

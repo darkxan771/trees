@@ -1,16 +1,18 @@
 # Useful functions for the manipulation of random trees
 
+from copy import deepcopy
+from typing import Callable
+
 import numpy as np
 import numpy.random as rand
-
 from scipy.special import factorial
-from typing import Callable
-from copy import deepcopy
-from .crump_jagers_mode import PointProcess
-from .random_partitions import EwensPartition
+
+from ..abstraction import Tree
+from ..containers import RecursiveTrees, RootedTrees
 from ..recursive import RecursiveTree
 from ..rooted import RootedTree
-from ..containers import RootedTrees, RecursiveTrees
+from .crump_jagers_mode import PointProcess
+from .random_partitions import EwensPartition
 
 
 def _random_pairs(n: int) -> tuple[np.ndarray, np.ndarray]:
@@ -20,68 +22,71 @@ def _random_pairs(n: int) -> tuple[np.ndarray, np.ndarray]:
     return (w.astype(int), J)
 
 
-def probability_uniform_rooted(T: RootedTree) -> float:
+def probability_uniform_rooted(T: Tree) -> float:
     """
     Returns the probability of the rooted tree T under the
     uniform distribution on trees with the same size.
     """
-    return float(1 / RootedTrees(T.size).cardinality())
+    return float(1 / RootedTrees(T.number_of_vertices).cardinality())
 
 
-def probability_uniform_recursive(T: RecursiveTree) -> float:
+def probability_uniform_recursive(T: Tree) -> float:
     """
     Returns the probability of the recursive tree T under
     the uniform distribution on trees with the same size.
     """
-    return float(1 / RecursiveTrees(T.size[0]).cardinality())
+    return float(1 / RecursiveTrees(T.number_of_vertices).cardinality())
 
 
-def probability_plancherel(T: RecursiveTree) -> float:
+def probability_plancherel(T: Tree) -> float:
     """
-    Returns the probability of the recursive tree T under
-    the Plancherel distribution.
+    Returns the probability of the recursive or rooted tree T under
+    the Plancherel distribution (beware that the result is not the same).
     """
-    n = T.size[0]
-    num = int(factorial(n) / np.prod(T.size[:n]))
-    denum = np.prod(np.array([(i * (i + 1) / 2) for i in range(1, n)]))
-    return float(num / denum)
+    if isinstance(T, RecursiveTree):
+        n = T.size[0]
+        num = int(factorial(n) / np.prod(T.size[:n]))
+        denum = np.prod(np.array([(i * (i + 1) / 2) for i in range(1, n)]))
+        return float(num / denum)
+    elif isinstance(T, RootedTree):
+        return T.plancherel_measure
+    else:
+        raise NotImplementedError
 
 
-def probability_weighted(
-    T: RecursiveTree, weight_function: Callable[[int], float]
-) -> float:
+def probability_weighted(T: Tree, weight_function: Callable[[int], float]) -> float:
     """
     Returns the probability of the recursive tree T under the
     weighted distribution.
     """
-    n = T.size[0]
-    W = np.vectorize(weight_function)
-    num = np.prod(W(T.parent[np.arange(1, n)]))
-    denom = np.prod(np.cumsum(W(np.arange(n - 1))))
-    return float(num / denom)
+    if isinstance(T, RecursiveTree):
+        n = T.size[0]
+        W = np.vectorize(weight_function)
+        num = np.prod(W(T.parent[np.arange(1, n)]))
+        denom = np.prod(np.cumsum(W(np.arange(n - 1))))
+        return float(num / denom)
+    else:
+        raise NotImplementedError
 
 
-def probability_ewens_tree(T: RecursiveTree, theta: float) -> float:
+def probability_ewens_tree(T: Tree, theta: float) -> float:
     """
     Returns the probability of the recursive tree T under
     the Ewens distribution with parameter theta.
     """
-    if T.size[0] == 1:
+    if T.number_of_vertices == 1:
         return float(1)
     else:
-        sub = [T.subtree(k) for k in T.children[0]]
-        A = float(np.prod([probability_ewens_tree(U, theta) for U in sub]))
-        p = EwensPartition(T.size[0] - 1, theta).probability(
-            T.subtrees_partition
-        )
+        A = float(np.prod([probability_ewens_tree(U, theta) for U in T.subtree_list]))
+        p = EwensPartition(T.number_of_edges, theta).probability(T.subtrees_partition)
         return A * p / T.subtrees_partition.bell_number
 
 
 compute_probabilities: dict[tuple[str, str], Callable] = {
-    ("Deterministic", "recursive"): (lambda T, U: float(T == U)),
-    ("Uniform", "rooted"): (lambda T, _: probability_uniform_rooted(T)),
-    ("Uniform", "recursive"): (lambda T, _: probability_uniform_recursive(T)),
-    ("Plancherel", "recursive"): (lambda T, _: probability_plancherel(T)),
+    ("Deterministic", "recursive"): lambda T, U: float(T == U),
+    ("Uniform", "rooted"): lambda T, _: probability_uniform_rooted(T),
+    ("Uniform", "recursive"): lambda T, _: probability_uniform_recursive(T),
+    ("Plancherel", "recursive"): lambda T, _: probability_plancherel(T),
     ("Weighted", "recursive"): probability_weighted,
     ("Ewens", "recursive"): probability_ewens_tree,
 }
@@ -213,11 +218,11 @@ def CJM_recursive_tree(n: int, pp: PointProcess):
 
 
 generators_random_tree: dict[tuple[str, str], Callable] = {
-    ("Deterministic", "recursive"): (lambda _, T: T),
-    ("Subtree", "recursive"): (lambda _, U: random_subtree(U)),
-    ("Cut", "recursive"): (lambda _, U: random_cut(U)),
-    ("Uniform", "recursive"): (lambda n, _: uniform_recursive_tree(n)),
-    ("Plancherel", "recursive"): (lambda n, _: plancherel_tree(n)),
+    ("Deterministic", "recursive"): lambda _, T: T,
+    ("Subtree", "recursive"): lambda _, U: random_subtree(U),
+    ("Cut", "recursive"): lambda _, U: random_cut(U),
+    ("Uniform", "recursive"): lambda n, _: uniform_recursive_tree(n),
+    ("Plancherel", "recursive"): lambda n, _: plancherel_tree(n),
     ("Weighted", "recursive"): weighted_recursive_tree,
     ("Ewens", "recursive"): ewens_recursive_tree,
     ("Crump-Jagers-Mode", "recursive"): CJM_recursive_tree,

@@ -2,31 +2,24 @@
 # trees, branching CMJ processes,
 # partitions and point processes
 
-from .random_trees import (
-    RandomSubtree,
-    RandomCut,
-    UniformRootedTree,
-    UniformRecursiveTree,
-    PlancherelRecursiveTree,
-    WeightedRecursiveTree,
-    EwensRecursiveTree,
-    CrumpJagersModeTree,
-)
-from .random_partitions import (
-    UniformPartition,
-    EwensPartition,
-    PlancherelPartition,
-)
-from .crump_jagers_mode import (
-    CrumpJagersModeProcess,
-)
+from .crump_jagers_mode import CrumpJagersModeProcess
 from .point_processes import (
+    LogPoissonDirichlet,
     PointProcess,
-    PoissonPointProcess,
     PoissonDirichlet,
-    LogPoissonDirichlet
+    PoissonPointProcess,
 )
-
+from .random_partitions import EwensPartition, PlancherelPartition, UniformPartition
+from .random_trees import (
+    CrumpJagersModeTree,
+    EwensRecursiveTree,
+    PlancherelRecursiveTree,
+    RandomCut,
+    RandomSubtree,
+    UniformRecursiveTree,
+    UniformRootedTree,
+    WeightedRecursiveTree,
+)
 
 __all__ = [
     "RandomSubtree",

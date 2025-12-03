@@ -1,12 +1,13 @@
 # Defines an IntegerPartitions container
 
-from ..abstraction import IntegerPartition
+from itertools import chain, count
+
+from ..abstraction import InfiniteSetError, IntegerPartition
 from ..boltzmann.boltzmann_partition import generating_series_P
 
 
 class _IntegerPartitionsIterator_n:
     def __init__(self, n: int):
-        self.size = n
         self.a = [0] * (n + 1)
         self.k = 1
         self.x = 1
@@ -48,18 +49,29 @@ class IntegerPartitions:
     A container for integer partitions with a given size n.
     """
 
-    def __init__(self, n: int):
-        self.size = n
+    def __init__(self, n: None | int = None):
+        self.order = n
 
     def __repr__(self):
-        return f"Integer partitions with size {self.size}"
-
-    def __iter__(self):
-        return _IntegerPartitionsIterator_n(self.size)
+        if self.order is None:
+            return "Integer partitions"
+        else:
+            return f"Integer partitions with size {self.order}"
 
     def __contains__(self, L):
         A = isinstance(L, IntegerPartition)
-        return A and L.size == self.size
+        if self.order is not None:
+            return A and L.size == self.order
+        else:
+            return A
+
+    def __iter__(self):
+        if self.order is not None:
+            return _IntegerPartitionsIterator_n(self.order)
+        else:
+            return chain.from_iterable(
+                IntegerPartitions(n) for n in count(1)
+            ).__iter__()
 
     def cardinality(self) -> int:
         """
@@ -71,4 +83,7 @@ class IntegerPartitions:
         P[n]
         = 1/n sum([d * P[n-k] for k in 1..n and for d | k]).
         """
-        return int(generating_series_P(self.size)[-1])
+        if self.order is None:
+            raise InfiniteSetError("Infinite set")
+        else:
+            return int(generating_series_P(self.order)[-1])

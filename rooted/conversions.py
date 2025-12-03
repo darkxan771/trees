@@ -1,11 +1,13 @@
 # Converts a rooted tree to another format
 
-import numpy as np
-import networkx as nx
 from collections.abc import Sequence
 from typing import Callable
-from .rooted_tree import RootedTree
+
+import networkx as nx
+import numpy as np
+
 from ..recursive import RecursiveTree
+from .rooted_tree import RootedTree
 
 
 def _c_flatten(data):
@@ -50,7 +52,7 @@ def tree_to_nested_list(T: RootedTree) -> list:
     """
     Converts the rooted tree to a nested list.
     """
-    return [tree_to_nested_list(child) for child in T.children]
+    return [tree_to_nested_list(child) for child in T.subtrees]
 
 
 def tree_to_code(T: RootedTree) -> tuple:
@@ -64,16 +66,14 @@ def tree_to_code(T: RootedTree) -> tuple:
 def _insert_in_recursive_tree(
     T: RootedTree, RT: RecursiveTree, d: int, mini: int, maxi: int
 ) -> None:
-    sizes = [c.size for c in T.children]
-    RT.children[mini] = (
-        mini + 1 + np.cumsum(np.array([0] + sizes))[:-1]
-    ).tolist()
+    sizes = [c.size for c in T.subtrees]
+    RT.children[mini] = (mini + 1 + np.cumsum(np.array([0] + sizes))[:-1]).tolist()
     RT.weight[mini] = 1
     RT.depth[mini] = d
     RT.size[mini] = maxi - mini
     if len(sizes) > 0:
         mini2 = mini + 1
-        for c in T.children:
+        for c in T.subtrees:
             maxi2 = mini2 + c.size
             RT.parent[mini2] = mini
             _insert_in_recursive_tree(c, RT, d + 1, mini2, maxi2)
@@ -104,7 +104,7 @@ def tree_to_networkx(T: RootedTree) -> nx.classes.digraph.DiGraph:
 compute_conversions: dict[str, Callable] = {
     "code": tree_to_code,
     "networkx": tree_to_networkx,
-    "rooted": (lambda T: T),
+    "rooted": lambda T: T,
     "recursive": tree_to_recursive,
     "nested_list": tree_to_nested_list,
 }

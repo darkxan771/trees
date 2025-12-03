@@ -1,6 +1,10 @@
-# Useful functions
+# Useful functions and classes
 
 import numpy as np
+
+
+class InfiniteSetError(Exception):
+    pass
 
 
 def standardisation(L: np.ndarray) -> np.ndarray:
