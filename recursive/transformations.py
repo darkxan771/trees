@@ -1,9 +1,11 @@
 # Useful functions for the transformation of recursive trees
 
 import numpy as np
-from copy import deepcopy
+
+from ..abstraction.helpers import (
+    standardisation,
+)
 from .recursive_tree import RecursiveTree
-from ..abstraction.helpers import standardisation
 
 
 def tree_subtree(
@@ -21,9 +23,9 @@ def tree_subtree(
         else:
             S.parent[i] = -1
         S.children[i] = [dict_sub[int(n)] for n in T.children[sub[i]]]
-    S.size = deepcopy(T.size[sub])
-    S.depth = deepcopy(T.depth[sub]) - T.depth[k]
-    S.weight = deepcopy(T.weight[sub])
+    S.size = T.size[sub].copy()
+    S.depth = T.depth[sub].copy() - T.depth[k]
+    S.weight = T.weight[sub].copy()
     if renormalise_weights:
         S.weight = standardisation(S.weight)
     return S
@@ -35,24 +37,24 @@ def tree_cut(
     """
     Cuts the subtree based at k.
     """
-    n = T.size[0]
+    n = T.number_of_vertices
     sub = T.subtree_indices(k)
     to_substrack = len(sub)
     keep = [i for i in range(n) if (not (i in sub))]
     dict_keep = {keep[i]: i for i in range(len(keep))}
     dict_keep[-1] = -1
     C = RecursiveTree(max_size=len(keep))
-    C.parent = deepcopy(T.parent[keep])
+    C.parent = T.parent[keep].copy()
     C.parent = np.vectorize(lambda i: dict_keep[i])(C.parent)
-    C.children = deepcopy(T.children[keep])
+    C.children = T.children[keep].copy()
     C.children[dict_keep[T.parent[k]]].remove(k)
     for i in range(len(keep)):
         C.children[i] = list(map(lambda i: dict_keep[i], C.children[i]))
-    C.size = deepcopy(T.size[keep])
+    C.size = T.size[keep].copy()
     for i in T.path_to_root(k)[:-1]:
         C.size[dict_keep[i]] -= to_substrack
-    C.depth = deepcopy(T.depth[keep])
-    C.weight = deepcopy(T.weight[keep])
+    C.depth = T.depth[keep].copy()
+    C.weight = T.weight[keep].copy()
     if renormalise_weights:
         C.weight = standardisation(C.weight)
     return C
@@ -62,7 +64,7 @@ def tree_add_node(T: RecursiveTree, k: int, **kwargs) -> None:
     """
     Adds a node above k.
     """
-    n = T.size[0]
+    n = T.number_of_vertices
     T.parent[n] = k
     T.depth[n] = T.depth[k] + 1
     T.children[n] = []

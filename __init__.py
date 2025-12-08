@@ -3,7 +3,6 @@ from .abstraction.plot import graphic_options
 from .containers import IntegerPartitions, RecursiveTrees, RootedTrees
 from .random import (
     CrumpJagersModeProcess,
-    CrumpJagersModeTree,
     EwensPartition,
     EwensRecursiveTree,
     LogPoissonDirichlet,
@@ -21,11 +20,16 @@ from .random import (
 )
 from .recursive import RecursiveTree
 from .rooted import RootedTree
-from .tests import test_all, test_partition, test_random, test_recursive, test_rooted
+from .tests import (
+    test_all,
+    test_partition,
+    test_random,
+    test_recursive,
+    test_rooted,
+)
 
 __all__ = [
     "CrumpJagersModeProcess",
-    "CrumpJagersModeTree",
     "EwensPartition",
     "EwensRecursiveTree",
     "IntegerPartition",

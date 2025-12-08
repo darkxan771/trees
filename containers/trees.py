@@ -155,6 +155,19 @@ class RecursiveTrees:
         else:
             return factorial(n - 1, True)
 
+    def example(self) -> RecursiveTree:
+        """
+        A recursive tree with 15 vertices.
+        """
+        if self.order is None:
+            code = (0, 0, 0, 0, 1, 1, 0, 4, 2, 1, 6, 1, 3, 4)
+            T = RecursiveTree()
+            for i in code:
+                _ = T.add_node(i)
+            return T
+        else:
+            raise NotImplementedError
+
     def from_permutation(self, p: Sequence[int]) -> RecursiveTree:
         """
         Constructs the unique recursive tree corresponding to
@@ -251,6 +264,16 @@ class RootedTrees:
             raise InfiniteSetError("Infinite set")
         else:
             return int(generating_series_T(self.order)[-1])
+
+    def example(self) -> RootedTree:
+        """
+        A rooted tree with 15 vertices.
+        """
+        if self.order is None:
+            nested = [[[[[[[[]], []], [], []], [[]], []], []]]]
+            return self.from_nested_list(nested)
+        else:
+            raise NotImplementedError
 
     def from_code(self, L: Sequence[int]) -> RootedTree:
         """

@@ -14,11 +14,8 @@ from ..boltzmann.boltzmann_tree import (
 from ..containers import RecursiveTrees, RootedTrees
 from ..recursive import RecursiveTree
 from ..rooted import RootedTree
-from .crump_jagers_mode import PointProcess
-from .probabilities_and_generators import (
-    compute_probabilities,
-    generators_random_tree,
-)
+from .tree_generators import compute_random_trees
+from .tree_probabilities import compute_probabilities
 
 
 class RandomTree(Protocol):
@@ -92,7 +89,7 @@ class RandomTree(Protocol):
         """
         Picks a tree at random under the prescribed distribution.
         """
-        return generators_random_tree[self.name, self.treetype](
+        return compute_random_trees[self.name, self.treetype](
             self.size, self.parameter
         )
 
@@ -136,7 +133,9 @@ class RandomSubtree(RandomTree):
         n = self.parameter.size
         for k in range(n):
             for T in RecursiveTrees(n):
-                d[T.subtree(k).convert("code")] += self.parameter.probability(T) / n
+                d[T.subtree(k).convert("code")] += (
+                    self.parameter.probability(T) / n
+                )
         return d
 
 
@@ -270,15 +269,3 @@ class EwensRecursiveTree(RandomTree):
     def __repr__(self):
         A = "Ewens recursive tree with size"
         return f"{A} {self.size} and parameter {self.parameter}"
-
-
-class CrumpJagersModeTree(RandomTree):
-    def __init__(self, n: int, pp: PointProcess):
-        self.size = n
-        self.treetype = "recursive"
-        self.name = "Crump-Jagers-Mode"
-        self.parameter = pp
-
-    def probability(self, T: Tree) -> float:
-        _ = T
-        raise NotImplementedError

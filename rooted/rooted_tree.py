@@ -6,7 +6,7 @@ from typing import Any, Callable
 import numpy as np
 from scipy.special import factorial
 
-from ..abstraction import IntegerPartition, Tree
+from ..abstraction import Tree
 
 
 class RootedTree(Tree):
@@ -130,5 +130,7 @@ class RootedTree(Tree):
         The Plancherel measure of the rooted tree.
         """
         num = self.d * self.u
-        denum = np.prod(np.array([(i * (i + 1) / 2) for i in range(1, self.size + 1)]))
+        denum = np.prod(
+            np.array([(i * (i + 1) / 2) for i in range(1, self.size + 1)])
+        )
         return float(num / denum)

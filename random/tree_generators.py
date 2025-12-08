@@ -1,16 +1,11 @@
-# Useful functions for the manipulation of random trees
+# Useful functions for the generation of random trees
 
-from copy import deepcopy
 from typing import Callable
 
 import numpy as np
 import numpy.random as rand
-from scipy.special import factorial
 
-from ..abstraction import Tree
-from ..containers import RecursiveTrees, RootedTrees
 from ..recursive import RecursiveTree
-from ..rooted import RootedTree
 from .crump_jagers_mode import PointProcess
 from .random_partitions import EwensPartition
 
@@ -20,76 +15,6 @@ def _random_pairs(n: int) -> tuple[np.ndarray, np.ndarray]:
     w = np.floor(np.sqrt(alea_w + 0.25) + 0.5)
     J = 1 + rand.randint(w)
     return (w.astype(int), J)
-
-
-def probability_uniform_rooted(T: Tree) -> float:
-    """
-    Returns the probability of the rooted tree T under the
-    uniform distribution on trees with the same size.
-    """
-    return float(1 / RootedTrees(T.number_of_vertices).cardinality())
-
-
-def probability_uniform_recursive(T: Tree) -> float:
-    """
-    Returns the probability of the recursive tree T under
-    the uniform distribution on trees with the same size.
-    """
-    return float(1 / RecursiveTrees(T.number_of_vertices).cardinality())
-
-
-def probability_plancherel(T: Tree) -> float:
-    """
-    Returns the probability of the recursive or rooted tree T under
-    the Plancherel distribution (beware that the result is not the same).
-    """
-    if isinstance(T, RecursiveTree):
-        n = T.size[0]
-        num = int(factorial(n) / np.prod(T.size[:n]))
-        denum = np.prod(np.array([(i * (i + 1) / 2) for i in range(1, n)]))
-        return float(num / denum)
-    elif isinstance(T, RootedTree):
-        return T.plancherel_measure
-    else:
-        raise NotImplementedError
-
-
-def probability_weighted(T: Tree, weight_function: Callable[[int], float]) -> float:
-    """
-    Returns the probability of the recursive tree T under the
-    weighted distribution.
-    """
-    if isinstance(T, RecursiveTree):
-        n = T.size[0]
-        W = np.vectorize(weight_function)
-        num = np.prod(W(T.parent[np.arange(1, n)]))
-        denom = np.prod(np.cumsum(W(np.arange(n - 1))))
-        return float(num / denom)
-    else:
-        raise NotImplementedError
-
-
-def probability_ewens_tree(T: Tree, theta: float) -> float:
-    """
-    Returns the probability of the recursive tree T under
-    the Ewens distribution with parameter theta.
-    """
-    if T.number_of_vertices == 1:
-        return float(1)
-    else:
-        A = float(np.prod([probability_ewens_tree(U, theta) for U in T.subtree_list]))
-        p = EwensPartition(T.number_of_edges, theta).probability(T.subtrees_partition)
-        return A * p / T.subtrees_partition.bell_number
-
-
-compute_probabilities: dict[tuple[str, str], Callable] = {
-    ("Deterministic", "recursive"): lambda T, U: float(T == U),
-    ("Uniform", "rooted"): lambda T, _: probability_uniform_rooted(T),
-    ("Uniform", "recursive"): lambda T, _: probability_uniform_recursive(T),
-    ("Plancherel", "recursive"): lambda T, _: probability_plancherel(T),
-    ("Weighted", "recursive"): probability_weighted,
-    ("Ewens", "recursive"): probability_ewens_tree,
-}
 
 
 def random_subtree(U) -> RecursiveTree:
@@ -193,31 +118,12 @@ def CJM_recursive_tree(n: int, pp: PointProcess):
     Picks at random a recursive tree with size n, chosen according to a
     Crump-Jagers-Mode branching process.
     """
-    R = RecursiveTree(max_size=n)
-    Lpp = [deepcopy(pp)]
-    birth = [0]
-    Lpp[0].times = []
-    next_computed = []
-    m = 1
-    while m < n:
-        for i in range(m):
-            if i not in [x[0] for x in next_computed]:
-                next_computed.append((i, birth[i] + next(Lpp[i])))
-        next_computed.sort(key=lambda x: x[1])
-        i, t = next_computed.pop(0)
-        R.add_node(i)
-        m += 1
-        birth.append(t)
-        Lpp.append(deepcopy(pp))
-        Lpp[-1].times = []
-    last = birth[n - 1]
-    for i in range(n):
-        L = [birth[i] + t for t in Lpp[i].times if birth[i] + t < last]
-        R.additional[i] = np.array(L)
-    return R
+    base = pp
+    R = RecursiveTree()
+    return R.resize(n)
 
 
-generators_random_tree: dict[tuple[str, str], Callable] = {
+compute_random_trees: dict[tuple[str, str], Callable] = {
     ("Deterministic", "recursive"): lambda _, T: T,
     ("Subtree", "recursive"): lambda _, U: random_subtree(U),
     ("Cut", "recursive"): lambda _, U: random_cut(U),

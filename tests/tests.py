@@ -152,7 +152,9 @@ def test_random(verbose=True):
     T = UniformRecursiveTree(30).get_random_element()
     UR2 = UniformRecursiveTree(5)
     R2 = RecursiveTrees(5)
-    assert all(np.isclose(UR2.distribution()[T.convert("code")], 1 / 24) for T in R2)
+    assert all(
+        np.isclose(UR2.distribution()[T.convert("code")], 1 / 24) for T in R2
+    )
 
     PT = PlancherelRecursiveTree(30).get_random_element()
 
@@ -160,7 +162,9 @@ def test_random(verbose=True):
     print("\n")
     UP12 = UniformPartition(12)
     P12 = IntegerPartitions(12)
-    assert all(np.isclose(UP12.distribution()[tuple(P.parts)], 1 / 77) for P in P12)
+    assert all(
+        np.isclose(UP12.distribution()[tuple(P.parts)], 1 / 77) for P in P12
+    )
 
     PP = PlancherelPartition(100).get_random_element()
     if verbose:

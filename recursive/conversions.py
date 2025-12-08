@@ -15,7 +15,8 @@ def tree_to_code(T: RecursiveTree) -> tuple:
     Returns the code of the recursive tree (list of the nodes of
     attachment).
     """
-    return tuple(T.parent[1:].tolist())
+    n = T.number_of_vertices
+    return tuple(T.parent[1:n].tolist())
 
 
 def code_to_permutation(c: np.ndarray) -> np.ndarray:
@@ -35,7 +36,8 @@ def tree_to_permutation(T: RecursiveTree) -> tuple:
     the bijection from recursive trees with size n to permutations with
     size n-1.
     """
-    return tuple((code_to_permutation(T.parent[1:])).tolist())
+    n = T.number_of_vertices
+    return tuple((code_to_permutation(T.parent[1:n])).tolist())
 
 
 def permutation_to_code(p: np.ndarray) -> np.ndarray:
@@ -52,8 +54,9 @@ def tree_to_networkx(T: RecursiveTree) -> nx.classes.digraph.DiGraph:
     """
     Encodes the tree in a NetworkX labelled digraph.
     """
-    G = nx.DiGraph({i: T.children[i] for i in range(T.size[0])})
-    for i in range(T.size[0]):
+    n = T.number_of_vertices
+    G = nx.DiGraph({i: T.children[i] for i in range(n)})
+    for i in range(n):
         G.nodes[i]["label"] = i
         G.nodes[i]["depth"] = T.depth[i]
         G.nodes[i]["weight"] = T.weight[i]
@@ -71,18 +74,18 @@ def tree_to_dataframe(T: RecursiveTree) -> pd.DataFrame:
     """
     Returns the array encoding the recursive tree, as a Pandas dataframe.
     """
-    D = T.number_of_vertices
+    n = T.number_of_vertices
     matrix = np.array(
         [
-            T.parent[:D],
-            T.weight[:D],
-            T.size[:D],
-            T.depth[:D],
-            T.children[:D],
+            T.parent[:n],
+            T.weight[:n],
+            T.size[:n],
+            T.depth[:n],
+            T.children[:n],
         ]
     )
     row_names = np.array(["parent", "weight", "size", "depth", "children"])
-    column_names = np.arange(D)
+    column_names = np.arange(n)
     return pd.DataFrame(matrix, columns=column_names, index=row_names)
 
 
@@ -94,7 +97,7 @@ def tree_to_KP_insertion_array(T: RecursiveTree) -> np.ndarray:
     if not T.is_double_recursive():
         raise ValueError("The tree is not double recursive.")
     else:
-        n = T.size[0]
+        n = T.number_of_vertices
         res = np.zeros((2, n - 1), dtype=int)
         W = T.weights.copy()
         for i in range(1, n):

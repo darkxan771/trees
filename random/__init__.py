@@ -9,9 +9,12 @@ from .point_processes import (
     PoissonDirichlet,
     PoissonPointProcess,
 )
-from .random_partitions import EwensPartition, PlancherelPartition, UniformPartition
+from .random_partitions import (
+    EwensPartition,
+    PlancherelPartition,
+    UniformPartition,
+)
 from .random_trees import (
-    CrumpJagersModeTree,
     EwensRecursiveTree,
     PlancherelRecursiveTree,
     RandomCut,
@@ -28,7 +31,6 @@ __all__ = [
     "UniformRecursiveTree",
     "PlancherelRecursiveTree",
     "WeightedRecursiveTree",
-    "CrumpJagersModeTree",
     "EwensRecursiveTree",
     "UniformPartition",
     "EwensPartition",
