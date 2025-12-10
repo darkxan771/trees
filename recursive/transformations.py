@@ -1,10 +1,10 @@
 # Useful functions for the transformation of recursive trees
 
+
 import numpy as np
 
-from ..abstraction.helpers import (
-    standardisation,
-)
+from ..abstraction.helpers import shift_array, shift_dict, standardisation
+from ..containers.trees import RecursiveTrees
 from .recursive_tree import RecursiveTree
 
 
@@ -28,35 +28,35 @@ def tree_subtree(
     S.weight = T.weight[sub].copy()
     if renormalise_weights:
         S.weight = standardisation(S.weight)
+    if k in T.birth_times.keys():
+        S.birth_times = {}
+        for l in sub:
+            S.birth_times[dict_sub[l]] = T.birth_times[l] - T.birth_times[k]
+            S.birth_processes[dict_sub[l]] = T.birth_processes[l]
     return S
 
 
 def tree_cut(
-    T: RecursiveTree, k: int, renormalise_weights: bool = False
+    T: RecursiveTree, L: list[int], renormalise_weights: bool = False
 ) -> RecursiveTree:
     """
-    Cuts the subtree based at k.
+    Removes the nodes in L if the complement is a recursive part of T.
     """
     n = T.number_of_vertices
-    sub = T.subtree_indices(k)
-    to_substrack = len(sub)
-    keep = [i for i in range(n) if (not (i in sub))]
+    keep = [k for k in range(n) if (not (k in L))]
+    if not T.has_recursive_part(keep):
+        raise ValueError("One cannot cut the specified part")
     dict_keep = {keep[i]: i for i in range(len(keep))}
     dict_keep[-1] = -1
     C = RecursiveTree(max_size=len(keep))
-    C.parent = T.parent[keep].copy()
-    C.parent = np.vectorize(lambda i: dict_keep[i])(C.parent)
-    C.children = T.children[keep].copy()
-    C.children[dict_keep[T.parent[k]]].remove(k)
-    for i in range(len(keep)):
-        C.children[i] = list(map(lambda i: dict_keep[i], C.children[i]))
-    C.size = T.size[keep].copy()
-    for i in T.path_to_root(k)[:-1]:
-        C.size[dict_keep[i]] -= to_substrack
-    C.depth = T.depth[keep].copy()
-    C.weight = T.weight[keep].copy()
+    for k in keep[1:]:
+        C.add_node(dict_keep[T.parent[k]], new_weight=T.weight[k])
     if renormalise_weights:
         C.weight = standardisation(C.weight)
+    for l in keep:
+        if l in T.birth_times.keys():
+            C.birth_times[dict_keep[l]] = T.birth_times[l]
+            C.birth_processes[dict_keep[l]] = T.birth_processes[l]
     return C
 
 
@@ -78,3 +78,50 @@ def tree_add_node(T: RecursiveTree, k: int, **kwargs) -> None:
         T.weight[n] = kwargs["new_weight"]
     else:
         T.weight[n] = 1
+    if "birth_time" in kwargs:
+        T.birth_times[n] = kwargs["birth_time"]
+    if "birth_process" in kwargs:
+        T.birth_processes[n] = kwargs["birth_process"]
+
+
+def tree_insert_node(T: RecursiveTree, l: int, parent: int, **kwargs) -> None:
+    """
+    Shifts all the indices greater than l by one, and
+    inserts then a l-th node above the parent.
+    """
+    n = T.number_of_vertices
+    if l > n or n + 1 > T.limit:
+        raise ValueError(
+            f"One cannot insert the {l}-th node, the tree is not large enough"
+        )
+    if l <= parent:
+        raise ValueError(f"One cannot make {l} a child of {parent}")
+    shift_array(T.parent, l, n)
+    for k in range(n + 1):
+        T.parent[k] += int(T.parent[k] >= l)
+    shift_array(T.size, l, n)
+    shift_array(T.depth, l, n)
+    shift_array(T.weight, l, n)
+    for k in range(n):
+        T.children[k] = [a + 1 if a >= l else a for a in T.children[k]]
+    shift_array(T.children, l, n)
+    T.birth_times = shift_dict(T.birth_times, l, n)
+    T.birth_processes = shift_dict(T.birth_processes, l, n)
+    T.parent[l] = parent
+    T.children[parent].append(l)
+    T.children[parent].sort()
+    T.weight[l] = 1
+    T.depth[l] = T.depth[parent] + 1
+    T.children[l] = []
+    T.size[l] = 0
+    for k in T.path_to_root(l):
+        T.size[k] += 1
+    if "birth_time" in kwargs:
+        T.birth_times[l] = kwargs["birth_time"]
+    if "birth_process" in kwargs:
+        T.birth_processes[l] = kwargs["birth_process"]
+    code = T.convert("code")
+    RT = RecursiveTrees()
+    test = RT.from_code(list(code))
+    if not T == test:
+        raise ValueError("WTF")

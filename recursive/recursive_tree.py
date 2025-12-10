@@ -80,10 +80,11 @@ class RecursiveTree(Tree):
         R = RecursiveTree(L)
         for i in code:
             R.add_node(i)
+        n = len(list(self.birth_times.keys()))
         R.weight[:m] = self.weight[:m].copy()
         R.birth_times = self.birth_times.copy()
         R.birth_processes = self.birth_processes.copy()
-        for k in R.birth_times:
+        for k in range(n):
             if k >= m:
                 _ = R.birth_times.pop(k, None)
                 _ = R.birth_processes.pop(k, None)
@@ -155,14 +156,6 @@ class RecursiveTree(Tree):
     def data(self) -> Callable[[str], np.ndarray]:
         return lambda name: compute_data[name](self)
 
-    def subtree_indices(self, k: int) -> list[int]:
-        """
-        Returns the set of indices in the subtree based at k.
-        """
-        L = sum([self.subtree_indices(int(n)) for n in self.children[k]], [k])
-        L.sort()
-        return L
-
     @property
     def row_positions(self) -> np.ndarray:
         """
@@ -181,7 +174,48 @@ class RecursiveTree(Tree):
             next_level = sum([self.children[x] for x in level], [])
         return res
 
-    def path_to_root(self, k: int) -> np.ndarray:
+    @property
+    def longest_path(self) -> list[int]:
+        """
+        Returns the longest path in the tree. If there are several such paths,
+        then the longest path is the one with the largest label of final leaf.
+        """
+        h = self.height
+        n = self.number_of_vertices
+        candidates = [k for k in range(n) if self.depth[k] == h]
+        final = max(candidates)
+        return self.path_to_root(final)
+
+    def has_recursive_part(self, L) -> bool:
+        """
+        Checks if a list of indices forms a recursive part of the
+        tree (then, the complement can be removed with the cut method).
+        """
+        return all([all([i in L for i in self.path_to_root(k)]) for k in L])
+
+    def subtree_indices(self, k: int) -> list[int]:
+        """
+        Returns the set of indices in the subtree based at k.
+        """
+        L = sum([self.subtree_indices(int(n)) for n in self.children[k]], [k])
+        L.sort()
+        return L
+
+    def trim_indices(self, epsilon: float) -> list[int]:
+        """
+        Returns the list of indices of nodes with relative size of
+        subtree greater than epsilon, and such that all the ancestors
+        have the same property.
+        """
+        n = self.number_of_vertices
+        res = [
+            k
+            for k in range(n)
+            if k == 0 or self.size[k] >= epsilon * self.size[self.parent[k]]
+        ]
+        return [k for k in res if all([l in res for l in self.path_to_root(k)])]
+
+    def path_to_root(self, k: int) -> list:
         """
         Returns the unique path from the root to k.
         """
@@ -189,7 +223,7 @@ class RecursiveTree(Tree):
         res[-1] = k
         for i in range(self.depth[k]):
             res[-i - 2] = self.parent[res[-i - 1]]
-        return res
+        return res.tolist()
 
     def is_double_recursive(self) -> bool:
         """
@@ -247,10 +281,11 @@ class RecursiveTree(Tree):
         """
         return [self.subtree(k) for k in self.children[0]]
 
-    def cut(self, k: int, renormalise_weights: bool = False) -> RecursiveTree:
+    def cut(
+        self, L: list[int], renormalise_weights: bool = False
+    ) -> RecursiveTree:
         """
-        Removes the subtree based at k (including k), and renormalises the
-        labels.
+        Removes all the nodes of L if the complement is a recursive part.
 
         According to the value of the parameter renormalise_weights,
         the weights can be recomputed to be a standardisation of
@@ -258,7 +293,18 @@ class RecursiveTree(Tree):
         """
         from .transformations import tree_cut
 
-        return tree_cut(self, k, renormalise_weights)
+        return tree_cut(self, L, renormalise_weights)
+
+    def trim(self, epsilon: float) -> RecursiveTree:
+        """
+        Removes all the subtrees with relative size smaller than epsilon.
+        """
+        from .transformations import tree_cut
+
+        trim_indices = self.trim_indices(epsilon)
+        n = self.number_of_vertices
+        to_cut = [k for k in range(n) if not (k in trim_indices)]
+        return tree_cut(self, to_cut)
 
     def add_node(self, k: int, **kwargs) -> Self:
         """
@@ -269,10 +315,23 @@ class RecursiveTree(Tree):
           before the grafting.
         - the weight of the new node can be specified with the argument
           new_weight.
+        - the birth time and birth process of the new node can be specified.
         """
         from .transformations import tree_add_node
 
         tree_add_node(self, k, **kwargs)
+        return self
+
+    def insert_node(self, l: int, parent: int, **kwargs) -> Self:
+        """
+        Shifts all the indices greater than l by one, and
+        inserts then a l-th node above the parent.
+
+        The birth time and birth process of the new l-th node can be specified.
+        """
+        from .transformations import tree_insert_node
+
+        tree_insert_node(self, l, parent, **kwargs)
         return self
 
     def KP_insertion(self, i: int, J: int) -> Self:

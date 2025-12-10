@@ -32,6 +32,8 @@ def test_recursive(verbose=True):
     assert T.height == 3
     assert T.profile.tolist() == [1, 5, 8, 1]
     assert T.subtrees_partition.parts == [6, 3, 2, 2, 1]
+    assert T.path_to_root(6) == [0, 1, 6]
+    assert T.longest_path == [0, 1, 6, 11]
     assert T.row_positions.tolist() == [
         0,
         0,
@@ -68,7 +70,12 @@ def test_recursive(verbose=True):
     C = RecursiveTree(max_size=12)
     for k in (0, 0, 0, 1, 1, 0, 2, 1, 5, 1, 3):
         _ = C.add_node(k)
-    assert T.cut(4) == C
+    assert T.cut(T.subtree_indices(4)) == C
+
+    T2 = RecursiveTrees().example()
+    assert T2 == T
+    T2.insert_node(10, 2)
+    assert T2.convert("code") == (0, 0, 0, 0, 1, 1, 0, 4, 2, 2, 1, 6, 1, 3, 4)
 
     T.weight = np.array([15, 13, 14, 6, 5, 9, 12, 11, 2, 8, 7, 10, 3, 1, 4])
     assert T.is_double_recursive()

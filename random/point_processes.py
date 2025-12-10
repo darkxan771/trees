@@ -56,11 +56,110 @@ class StatePointProcess:
         self.data[key] = item
 
     def reset(self) -> Self:
+        """
+        Empty the state of the point process.
+        """
         for key in self.lists:
             self.data[key] = []
         for key in self.nums:
             self.data[key] = float(0)
         return self
+
+
+##################
+# Repr functions #
+##################
+
+
+def repr_poisson(args: dict) -> str:
+    if "intensity" in args.keys():
+        return f"Poisson point process with intensity {args["intensity"]}"
+    elif "density" in args.keys():
+        return f"Non-homogeneous Poisson point process"
+    else:
+        raise NotImplementedError
+
+
+def repr_PD(args) -> str:
+    return f"Poisson-Dirichlet point process with parameter {args["theta"]}"
+
+
+def repr_LPD(args) -> str:
+    return f"Log-Poisson-Dirichlet point process with parameter {args["theta"]}"
+
+
+repr: dict[str, Callable] = {
+    "Poisson": repr_poisson,
+    "Poisson-Dirichlet": repr_PD,
+    "Log-Poisson-Dirichlet": repr_LPD,
+}
+
+
+##################
+# Next functions #
+##################
+
+
+def next_time_poisson(state: StatePointProcess, args: dict) -> float:
+    if "intensity" in args.keys():
+        L = args["intensity"]
+        t = ([0] + state["times"])[-1] + EXP() / L
+    elif "density" in args.keys():
+        f = args["density"]
+        F = lambda x: quad(f, 0, x)[0]
+        inv = inverse_function(F)
+        t = inv(F(([0] + state["times"])[-1]) + EXP())
+    else:
+        raise NotImplementedError
+    state["times"].append(t)
+    return t
+
+
+def next_time_PD(state: StatePointProcess, args: dict) -> float:
+    state["beta"].append(BETA1(args["theta"]))
+    state["times"].append(
+        ([0] + state["times"])[-1] + (1 - state["cprod"]) * state["beta"][-1]
+    )
+    state["cprod"] = 1 - (1 - state["beta"][-1]) * (1 - state["cprod"])
+    return state["times"][-1]
+
+
+def next_time_LPD(state: StatePointProcess, args: dict) -> float:
+    state["beta"].append(BETA1(args["theta"]))
+    state["times"].append(-np.log((1 - state["cprod"]) * state["beta"][-1]))
+    state["cprod"] = 1 - (1 - state["beta"][-1]) * (1 - state["cprod"])
+    return state["times"][-1]
+
+
+next_time: dict[str, Callable] = {
+    "Poisson": next_time_poisson,
+    "Poisson-Dirichlet": next_time_PD,
+    "Log-Poisson-Dirichlet": next_time_LPD,
+}
+
+
+###################
+# Reach functions #
+###################
+
+
+def reaches_poisson(state: StatePointProcess, T: float) -> bool:
+    return (state["times"] != []) and (state["times"][-1] >= T)
+
+
+def reaches_PD(state: StatePointProcess, T: float) -> bool:
+    return T <= state["cprod"]
+
+
+def reaches_LPD(state: StatePointProcess, T: float) -> bool:
+    return T <= -np.log(1 - state["cprod"])
+
+
+reach: dict[str, Callable] = {
+    "Poisson": reaches_poisson,
+    "Poisson-Dirichlet": reaches_PD,
+    "Log-Poisson-Dirichlet": reaches_LPD,
+}
 
 
 class PointProcess:
@@ -75,17 +174,16 @@ class PointProcess:
 
     def __init__(
         self,
-        next_time: Callable[[list], float] = (lambda T: ([0] + T)[-1] + EXP()),
+        pp_type: str = "Poisson",
         state: StatePointProcess = StatePointProcess(),
+        **args,
     ):
+        self.pp_type = pp_type
         self.state = state
-        self.next_time: Callable[[list], float] = next_time
-        self.name_prepend: str = "Poisson"
-        self.name_append: str = "on R+"
-        self.is_increasing: bool = True
+        self.parameters = args
 
     def __repr__(self):
-        res = f"{self.name_prepend} point process {self.name_append}"
+        res = repr[self.pp_type](self.parameters)
         res += f" | times = {self.state.data["times"]}"
         return res
 
@@ -93,12 +191,23 @@ class PointProcess:
         return self
 
     def __next__(self):
-        self.state["times"].append(self.next_time(self.state["times"]))
-        return self.state["times"][-1]
+        return next_time[self.pp_type](self.state, self.parameters)
 
     def reset(self) -> Self:
+        """
+        Reset the point process to its initial state.
+        """
         _ = self.state.reset()
         return self
+
+    @property
+    def is_increasing(self) -> bool:
+        """
+        Indicates whether the point process produces its point
+        in an increasing manner.
+        """
+        increasing = ["Poisson"]
+        return self.pp_type in increasing
 
     def copy(self) -> PointProcess:
         """
@@ -106,31 +215,29 @@ class PointProcess:
         """
         state = StatePointProcess(self.state.data)
         state.reset()
-        res = PointProcess(self.next_time, state)
-        res.name_prepend, res.name_append, res.is_increasing = (
-            self.name_prepend,
-            self.name_append,
-            self.is_increasing,
-        )
+        res = PointProcess(self.pp_type, state, **self.parameters)
         return res
 
-    def reach_time(self, T: float) -> None:
+    def reaches_time(self, T: float) -> bool:
         """
-        Ensures that the point process has been completely
+        Checks if the point process has been completely
         computed on [0, T].
         """
-        if self.is_increasing:
-            while (self.state["times"] == []) or (self.state["times"][-1] < T):
-                _ = next(self)
-        else:
-            raise NotImplementedError
+        return reach[self.pp_type](self.state, T)
+
+    def compute_up_to_time(self, T: float) -> None:
+        """
+        Computes the point process completely on [0, T].
+        """
+        while not self.reaches_time(T):
+            _ = next(self)
 
     def get_random_element(self, T: float) -> np.ndarray:
         """
         Samples the point process on the interval [0,T].
         """
         self.state.reset()
-        self.reach_time(T)
+        self.compute_up_to_time(T)
         return np.array([t for t in self.state["times"] if t <= T])
 
     def plot(self, T: float, size: float = 1) -> None:
@@ -153,91 +260,21 @@ class PointProcess:
         plt.show()
 
 
-class PoissonPointProcess(PointProcess):
-    """
-    A Poisson point process with intensity f(x) dx.
-    """
-
-    def __init__(
-        self,
-        density: Callable[[float], float] = (lambda _: 1),
-        state: StatePointProcess = StatePointProcess(),
-    ):
-        self.F = lambda x: quad(density, 0, x)[0]
-        self.inv = inverse_function(self.F)
-        self.state = state
-        self.next_time = lambda L: self.inv(self.F(([0] + L)[-1]) + EXP())
-        self.name_prepend = "Poisson"
-        self.name_append = "on R+"
-        self.is_increasing = True
+def PoissonPointProcess() -> PointProcess:
+    return PointProcess("Poisson", intensity=1)
 
 
-class PoissonDirichlet(PointProcess):
-    """
-    A Poisson Dirichlet point process on [0,1] with parameter theta.
-    """
-
-    def __init__(self, theta: float = 1):
-        self.theta = theta
-        self.state = StatePointProcess({"times": [], "beta": [], "cprod": 0})
-        self.next_time = lambda T: ([0] + T)[-1] + (
-            1 - self.state["cprod"]
-        ) * BETA1(self.theta)
-        self.name_prepend = "Poisson Dirichlet"
-        self.name_append = f"with parameter {self.theta}"
-        self.is_increasing = False
-
-    def __next__(self):
-        self.state["beta"].append(BETA1(self.theta))
-        self.state["times"].append(
-            ([0] + self.state["times"])[-1]
-            + (1 - self.state["cprod"]) * self.state["beta"][-1]
-        )
-        self.state["cprod"] = 1 - (1 - self.state["beta"][-1]) * (
-            1 - self.state["cprod"]
-        )
-        return self.state["times"][-1]
-
-    def reach_time(self, T: float) -> None:
-        """
-        Ensures that the point process has been completely
-        computed on [0, T].
-        """
-        while T > self.state["cprod"]:
-            _ = next(self)
+def PoissonDirichlet(theta: float) -> PointProcess:
+    return PointProcess(
+        "Poisson-Dirichlet",
+        state=StatePointProcess({"times": [], "beta": [], "cprod": 0}),
+        theta=theta,
+    )
 
 
-class LogPoissonDirichlet(PointProcess):
-    """
-    Beware! We take the logarithms of the blocks, not the times of PD(theta).
-    Therefore, the times are not increasing in general. However, we can know
-    when we have all the points in a interval [0,T]
-    """
-
-    def __init__(self, theta: float = 1):
-        self.theta = theta
-        self.state = StatePointProcess({"times": [], "beta": [], "cprod": 0})
-        self.next_time = lambda _: -np.log(
-            (1 - self.state["cprod"]) * BETA1(self.theta)
-        )
-        self.name_prepend = "Log Poisson Dirichlet"
-        self.name_append = f"with parameter {self.theta}"
-        self.is_increasing = False
-
-    def __next__(self):
-        self.state["beta"].append(BETA1(self.theta))
-        self.state["times"].append(
-            -np.log((1 - self.state["cprod"]) * self.state["beta"][-1])
-        )
-        self.state["cprod"] = 1 - (1 - self.state["cprod"]) * (
-            1 - self.state["beta"][-1]
-        )
-        return self.state["times"][-1]
-
-    def reach_time(self, T: float) -> None:
-        """
-        Ensures that the point process has been completely
-        computed on [0, T].
-        """
-        while T > -np.log(1 - self.state["cprod"]):
-            _ = next(self)
+def LogPoissonDirichlet(theta: float) -> PointProcess:
+    return PointProcess(
+        "Log-Poisson-Dirichlet",
+        state=StatePointProcess({"times": [], "beta": [], "cprod": 0}),
+        theta=theta,
+    )

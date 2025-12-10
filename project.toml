@@ -1,5 +1,6 @@
-[project]
+# TODO: complete it, check how to use setuptools and make a package 
 
+[project]
 name = "eternitree"
 version = "0.1"
 authors = [{name="Pierre-Loïc Méliot", email="pierreloic.meliot@gmail.com"}]

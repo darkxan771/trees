@@ -19,3 +19,27 @@ def standardisation(L: np.ndarray) -> np.ndarray:
             res[j] += int(L[j] > L[k])
             res[k] += int(L[j] < L[k])
     return res
+
+
+def shift_array(L: np.ndarray, l: int, n: int) -> None:
+    """
+    Shift by one index all the entries of an array
+    between l and n (assuming that said array has
+    at least n+1 entries).
+    """
+    L[l + 1 : n + 1] = L[l:n]
+
+
+def shift_dict(d: dict, l: int, n: int) -> dict:
+    """
+    Shift by one index all the keys of a dictionary between l and n.
+    """
+    res = {}
+    L = list(d.keys())
+    L.sort()
+    for k in L:
+        if l <= k < n:
+            res[k + 1] = d[k]
+        else:
+            res[k] = d[k]
+    return res

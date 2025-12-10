@@ -188,11 +188,14 @@ class RecursiveTrees:
         Constructs the unique recursive tree corresponding to
         the code c.
         """
-        if self.order is not None and (not len(c) == self.order - 1):
-            raise ValueError(
-                "c does not have the correct size for the container."
-            )
-        res = RecursiveTree(max_size=len(c) + 1)
+        if self.order is None:
+            res = RecursiveTree()
+        else:
+            if not len(c) + 1 == self.order:
+                raise ValueError(
+                    "c does not have the correct size for the container."
+                )
+            res = RecursiveTree(max_size=len(c) + 1)
         res.weight[0] = len(c) + 1
         for k in range(len(c)):
             _ = res.add_node(c[k], new_weight=len(c) - k)

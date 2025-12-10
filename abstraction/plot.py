@@ -1,16 +1,20 @@
 # Plots of IntegerPartition and Tree objects
 
-import numpy as np
-import networkx as nx
+
+from __future__ import annotations
 
 from typing import Callable
-from networkx import spring_layout
-from matplotlib.patches import Circle
+
+import networkx as nx
+import numpy as np
 from matplotlib.axes._axes import Axes
-from .tree import Tree
+from matplotlib.patches import Circle
+from networkx import spring_layout
+
+from ..abstraction.helpers import standardisation
 from ..recursive import RecursiveTree
 from .partition import IntegerPartition
-
+from .tree import Tree
 
 ###########
 # Layouts #
@@ -79,17 +83,17 @@ def compute_natural(T: RecursiveTree) -> dict:
 compute_layouts: dict[str, Callable] = {
     "centered": compute_centered,
     "left-aligned": compute_left_aligned,
-    "circular": (lambda T: compute_circular(T, radii(T), angles(T))),
-    "log-circular": (
-        lambda T: compute_circular(T, radii(T, "log-circular"), angles(T))
+    "circular": lambda T: compute_circular(T, radii(T), angles(T)),
+    "log-circular": lambda T: compute_circular(
+        T, radii(T, "log-circular"), angles(T)
     ),
     "natural": compute_natural,
 }
 
 
-##########
-# Labels #
-##########
+###################
+# Labels / colors #
+###################
 
 
 def labels_simple(T: RecursiveTree) -> dict:
@@ -114,6 +118,73 @@ compute_labels: dict[str, Callable] = {
     "simple": labels_simple,
     "double": labels_double,
     "with_weights": labels_with_weights,
+}
+
+
+color_start = np.array([0, 70, 135]) / 255
+color_end = np.array([255, 68, 153]) / 255
+
+
+class ComputeColors:
+
+    def __init__(self, opt: str):
+        self.opt = opt
+
+    def __call__(
+        self, T: RecursiveTree, G: GraphicOptions
+    ) -> tuple[list, list]:
+        n = T.number_of_vertices
+        E = T.convert("networkx").edges
+        f = colors_dict[self.opt](T, G)
+        return [f(k) for k in range(n)], [f(e[1]) for e in E]
+
+
+def colors_age(
+    T: RecursiveTree, _: GraphicOptions
+) -> Callable[[int], np.ndarray]:
+    birth = np.array(list(T.birth_times.values()))
+    bs = standardisation(birth) / T.number_of_vertices
+    return lambda x: (1 - bs[x]) * color_start + bs[x] * color_end
+
+
+def colors_trim(
+    T: RecursiveTree, G: GraphicOptions
+) -> Callable[[int], np.ndarray]:
+    epsilon = G.options["trim"]
+    start = T.trim_indices(epsilon)
+    return lambda x: color_start if x in start else color_end
+
+
+def colors_subtree(
+    T: RecursiveTree, G: GraphicOptions
+) -> Callable[[int], np.ndarray]:
+    k = G.options["subtree"]
+    end = T.subtree_indices(k)
+    res = lambda x: color_end if x in end else color_start
+    return res
+
+
+def colors_time(
+    T: RecursiveTree, G: GraphicOptions
+) -> Callable[[int], np.ndarray]:
+    t = G.options["time"]
+    Tb = T.birth_times
+    return lambda x: color_end if Tb[x] > t else color_start
+
+
+def colors_longest_path(
+    T: RecursiveTree, _: GraphicOptions
+) -> Callable[[int], np.ndarray]:
+    L = T.longest_path
+    return lambda x: color_end if x in L else color_start
+
+
+colors_dict: dict[str, Callable] = {
+    "age": colors_age,
+    "trim": colors_trim,
+    "subtree": colors_subtree,
+    "time": colors_time,
+    "longest_path": colors_longest_path,
 }
 
 
@@ -142,6 +213,7 @@ class GraphicOptions:
         self.style = self.options.pop("style", "centered")
         self.labels = self.options.pop("labels", "simple")
         self.with_levels = self.options.pop("with_levels", False)
+        self.with_colors = self.options.pop("with_colors", False)
         if self.options.pop("large", False):
             self.labels = "empty"
             self.options["arrows"] = False
@@ -177,12 +249,33 @@ def draw_tree_on_ax(T: Tree, ax0: Axes, **options) -> None:
     ax0.set_axis_off()
     if G.with_levels:
         G.draw_levels_on_ax(ax0, RT.height, RT.profile)
+    if G.with_colors:
+        nc, ec = ComputeColors(G.with_colors)(RT, G)
+        _ = G.options.pop(G.with_colors, None)
+    else:
+        nc, ec = "b", "k"
     pos0 = compute_layouts[G.style](RT)
     if G.labels == "empty":
-        nx.draw_networkx(Tn, ax=ax0, pos=pos0, with_labels=False, **G.options)
+        nx.draw_networkx(
+            Tn,
+            ax=ax0,
+            pos=pos0,
+            with_labels=False,
+            node_color=nc,
+            edge_color=ec,
+            **G.options,
+        )
     else:
         L = compute_labels[G.labels](RT)
-        nx.draw_networkx(Tn, ax=ax0, pos=pos0, labels=L, **G.options)
+        nx.draw_networkx(
+            Tn,
+            ax=ax0,
+            pos=pos0,
+            labels=L,
+            node_color=nc,
+            edge_color=ec,
+            **G.options,
+        )
     if G.style in ["circular", "log-circular", "natural"]:
         ax0.set_aspect(1)
 

@@ -78,6 +78,10 @@ class Tree(Protocol):
                   "circular", "log-circular".
         - labels: "empty", "simple", "with_weights", "double".
         - with_levels: bool.
+        - with_colors: False or "age", "trim", "subtree", "time".
+        The three last options need an additional parameter, and they color
+        certain parts of the trees in blue or pink. The option "age" only
+        works for a tree constructed by a branching process.
         """
         _, ax0 = plt.subplots(figsize=(8, 8))
         self.draw_on_ax(ax0, **options)

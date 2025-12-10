@@ -1,5 +1,7 @@
 # Defines the class RootedTree
 
+from __future__ import annotations
+
 from collections import defaultdict
 from typing import Any, Callable
 
@@ -134,3 +136,15 @@ class RootedTree(Tree):
             np.array([(i * (i + 1) / 2) for i in range(1, self.size + 1)])
         )
         return float(num / denum)
+
+    def trim(self, epsilon: float) -> RootedTree:
+        """
+        Removes all the subtrees with relative size smaller than epsilon.
+        """
+        return RootedTree(
+            [
+                child.trim(epsilon)
+                for child in self.subtrees
+                if child.size >= epsilon * (self.size - 1)
+            ]
+        )
