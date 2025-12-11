@@ -1,16 +1,15 @@
-# TODO: complete it, check how to use setuptools and make a package 
-
 [project]
 name = "eternitree"
 version = "0.1"
 authors = [{name="Pierre-Loïc Méliot", email="pierreloic.meliot@gmail.com"}]
-description = "A package to manipulate large (random) rooted trees"
+description = "A package to manipulate large random rooted trees"
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
 ]
+keywords = ["trees", "combinatorics", "probability", "mathematics"]
 license = "MIT"
 license-files = ["LICENSE"]
 

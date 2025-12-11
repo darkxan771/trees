@@ -2,6 +2,6 @@
 # modifications are not breaking the code
 
 
-from .tests import test_all, test_partition, test_random, test_recursive, test_rooted
+from .tests import test_partition, test_random, test_recursive, test_rooted
 
-__all__ = ["test_recursive", "test_rooted", "test_partition", "test_random", "test_all"]
+__all__ = ["test_recursive", "test_rooted", "test_partition", "test_random"]

@@ -1,19 +1,23 @@
 # Tests
 
+import sys
+
 import numpy as np
 
-from ..abstraction import (
+sys.path.insert(0, "../src/")
+
+from eternitree.abstraction import (
     IntegerPartition,
 )
-from ..containers import IntegerPartitions, RecursiveTrees, RootedTrees
-from ..random import (
+from eternitree.containers import IntegerPartitions, RecursiveTrees, RootedTrees
+from eternitree.random import (
     PlancherelPartition,
     PlancherelRecursiveTree,
     UniformPartition,
     UniformRecursiveTree,
     UniformRootedTree,
 )
-from ..recursive import RecursiveTree
+from eternitree.recursive import RecursiveTree
 
 
 def test_recursive(verbose=True):
@@ -188,9 +192,13 @@ def test_random(verbose=True):
         print("\n", "Done !")
 
 
-def test_all():
+def main():
     test_recursive(False)
     test_rooted(False)
     test_partition(False)
     test_random(False)
     print("Done !")
+
+
+if __name__ == "__main__":
+    main()

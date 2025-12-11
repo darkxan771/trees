@@ -1,19 +1,24 @@
 # Defines an abstract class RandomTree, and various subclasses
 
-# TODO: general fragmentation trees
+# TODO: general fragmentation trees (we might need to introduce exchangeable set
+# partitions).
+
+# TODO: understand where the longest path falls.
 
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Callable, Protocol
+from typing import Any
+from typing import Callable
+from typing import Protocol
 
-from ..abstraction import InfiniteSetError, Tree
-from ..boltzmann.boltzmann_tree import (
-    compute_values,
-    find_x_for_n,
-    sampler_with_precomputed,
-)
-from ..containers import RecursiveTrees, RootedTrees
+from ..abstraction import InfiniteSetError
+from ..abstraction import Tree
+from ..boltzmann.boltzmann_tree import compute_values
+from ..boltzmann.boltzmann_tree import find_x_for_n
+from ..boltzmann.boltzmann_tree import sampler_with_precomputed
+from ..containers import RecursiveTrees
+from ..containers import RootedTrees
 from ..recursive import RecursiveTree
 from ..rooted import RootedTree
 from .tree_generators import compute_random_trees

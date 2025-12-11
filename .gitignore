@@ -1,3 +1,10 @@
+dist/
+old/
+jupyter/.ipynb_checkpoints/
+jupyter/.virtual_documents/
+
+src/eternitree.egg-info/
+
 __pycache__/
 **/__pycache__/
 

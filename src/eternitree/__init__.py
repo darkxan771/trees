@@ -20,13 +20,6 @@ from .random import (
 )
 from .recursive import RecursiveTree
 from .rooted import RootedTree
-from .tests import (
-    test_all,
-    test_partition,
-    test_random,
-    test_recursive,
-    test_rooted,
-)
 
 __all__ = [
     "CrumpJagersModeProcess",
@@ -51,9 +44,4 @@ __all__ = [
     "UniformRootedTree",
     "WeightedRecursiveTree",
     "graphic_options",
-    "test_all",
-    "test_partition",
-    "test_random",
-    "test_recursive",
-    "test_rooted",
 ]
