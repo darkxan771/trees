@@ -160,7 +160,7 @@ class RecursiveTrees:
 
     def example(self) -> Tree:
         """
-        A recursive tree with 15 vertices.
+        An example of recursive tree.
         """
         if self.order is None:
             code = (0, 0, 0, 0, 1, 1, 0, 4, 2, 1, 6, 1, 3, 4)
@@ -276,7 +276,7 @@ class RootedTrees:
 
     def example(self) -> Tree:
         """
-        A rooted tree with 15 vertices.
+        An example of rooted tree.
         """
         if self.order is None:
             nested = [[[[[[[[]], []], [], []], [[]], []], []]]]

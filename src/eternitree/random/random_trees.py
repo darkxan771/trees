@@ -8,12 +8,9 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any
 from typing import Callable
-from typing import Protocol
 
-from ..abstraction import InfiniteSetError
-from ..abstraction import Tree
+from ..abstraction.random import Random
 from ..boltzmann.boltzmann_tree import compute_values
 from ..boltzmann.boltzmann_tree import find_x_for_n
 from ..boltzmann.boltzmann_tree import sampler_with_precomputed
@@ -21,173 +18,27 @@ from ..containers import RecursiveTrees
 from ..containers import RootedTrees
 from ..recursive import RecursiveTree
 from ..rooted import RootedTree
-from .tree_generators import compute_random_trees
-from .tree_probabilities import compute_probabilities
 
 
-class RandomTree(Protocol):
-    """
-    A generic class for distributions of random trees (either rooted
-    unlabelled trees, or rooted recursive trees).
-    """
-
-    size: int | None
-    treetype: str = "recursive"
-    name: str = "Random"
-    parameter: Any = None
-
-    def __repr__(self):
-        res = f"{self.name} {self.treetype} tree"
-        if self.size is not None:
-            res += f" with size {self.size}"
-        return res
-
-    def container(self) -> RootedTrees | RecursiveTrees:
-        """
-        The support of the distribution of random trees.
-        """
-        if self.treetype == "recursive":
-            return RecursiveTrees(self.size)
-        else:
-            return RootedTrees(self.size)
-
-    def probability(self, T: Tree) -> float:
-        """
-        Computes the probability of T under the prescribed distribution.
-        """
-        if T in self.container():
-            try:
-                return compute_probabilities[self.name, self.treetype](
-                    T, self.parameter
-                )
-            except KeyError:
-                return self.distribution()[T.convert("code")]
-        else:
-            return float(0)
-
-    def distribution(self) -> defaultdict:
-        """
-        Returns a dictionary with items (T, probability[T]), where T is
-        identified by its code.
-        """
-        if self.size is None:
-            raise NotImplementedError
-        return defaultdict(
-            float,
-            {T.convert("code"): self.probability(T) for T in self.container()},
-        )
-
-    def distribution_partition(self) -> defaultdict:
-        """
-        Returns a dictionary with items (L, probability[L]), where L
-        runs over the set of integer partitions with size n - 1, and
-        probability[L] is the probability of L being the list of
-        sizes of the subtrees of a random tree.
-        """
-        if self.size is None:
-            raise InfiniteSetError
-        res = defaultdict(float)
-        for T in self.container():
-            p = tuple(T.subtrees_partition.parts)
-            res[p] += self.probability(T)
-        return res
-
-    def get_random_element(self) -> Tree:
-        """
-        Picks a tree at random under the prescribed distribution.
-        """
-        return compute_random_trees[self.name, self.treetype](
-            self.size, self.parameter
-        )
-
-
-class DeterministicRecursiveTree(RandomTree):
-    """
-    A deterministic recursive tree.
-    """
-
-    def __init__(self, T: RecursiveTree):
-        self.size = T.size[0]
-        self.treetype = "recursive"
-        self.name = "Deterministic"
-        self.parameter = T
-
-    def __repr__(self):
-        return self.parameter.__repr__()
-
-
-class RandomSubtree(RandomTree):
-    """
-    Random subtree T of a supertree U, which can itself be random (but with
-    fixed size).
-    """
-
-    def __init__(self, U: RandomTree):
-        self.size = 0
-        self.parameter = U
-        if not U.treetype == "recursive":
-            raise ValueError("U is not a random tree with recursive treetype")
-
-    def __repr__(self):
-        return f"Random subtree of a {self.parameter}"
-
-    def distribution(self) -> defaultdict:
-        """
-        Returns a dictionary with items (T, probability[T]), where T is
-        identified by its code.
-        """
-        d = defaultdict(float)
-        n = self.parameter.size
-        for k in range(n):
-            for T in RecursiveTrees(n):
-                d[T.subtree(k).convert("code")] += (
-                    self.parameter.probability(T) / n
-                )
-        return d
-
-
-class RandomCut(RandomTree):
-    """
-    Random cut T of a supertree U, which can itself be random (but with
-    fixed size).
-    """
-
-    def __init__(self, U: RandomTree):
-        self.size = 0
-        self.treetype = "recursive"
-        self.name = "Cut"
-        self.parameter = U
-        if not U.treetype == "recursive":
-            raise ValueError("T is not a random tree with recursive treetype")
-
-    def __repr__(self):
-        return f"Random cut of a {self.parameter}"
-
-    def distribution(self) -> defaultdict:
-        """
-        Returns a dictionary with items (T, probability[T]), where T is
-        identified by its code.
-        """
-        d = defaultdict(float)
-        n = self.parameter.size
-        for k in range(1, n):
-            for T in RecursiveTrees(n):
-                code = T.cut(T.subtree_indices(k)).convert("code")
-                d[code] += self.parameter.probability(T) / (n - 1)
-        return d
-
-
-class UniformRootedTree(RandomTree):
+class UniformRootedTree(Random):
     """
     Class of uniformly distributed random rooted trees with n nodes.
     """
 
     def __init__(self, n: int):
         self.size = n
-        self.treetype = "rooted"
-        self.name = "Uniform"
+        self.object = "rooted tree"
+        self.name = "uniform"
+        self.parameter = None
 
-    def get_random_element(self, exact: bool = True) -> Tree:
+    @property
+    def label(self):
+        return self.size
+
+    def container(self):
+        return RootedTrees(self.size)
+
+    def get_random_element(self, exact: bool = True) -> RootedTree:
         """
         Picks at random a rooted unlabelled tree with size n.
 
@@ -223,31 +74,119 @@ class UniformRootedTree(RandomTree):
             return tree_of_nested_list(res)
 
 
-class PlancherelRecursiveTree(RandomTree):
+class RandomRecursiveTree(Random):
+
+    @property
+    def label(self):
+        return self.size
+
+    def container(self):
+        return RecursiveTrees(self.size)
+
+
+class DeterministicRecursiveTree(RandomRecursiveTree):
+    """
+    A deterministic recursive tree.
+    """
+
+    def __init__(self, T: RecursiveTree):
+        self.size = T.number_of_vertices
+        self.object = "recursive tree"
+        self.name = "deterministic"
+        self.parameter = T
+
+    def __repr__(self):
+        return self.parameter.__repr__()
+
+    @property
+    def label(self):
+        return self.parameter
+
+
+class RandomSubtree(RandomRecursiveTree):
+    """
+    Random subtree T of a supertree U, which can itself be random (but with
+    fixed size).
+    """
+
+    def __init__(self, U: RandomRecursiveTree):
+        self.size = None
+        self.object = "recursive tree"
+        self.name = "subtree"
+        self.parameter = U
+
+    def __repr__(self):
+        return f"Random subtree of a {self.parameter}"
+
+    @property
+    def label(self):
+        return self.parameter
+
+    def distribution(self) -> defaultdict:
+        d = defaultdict(float)
+        n = self.parameter.size
+        for k in range(n):
+            for T in RecursiveTrees(n):
+                d[T.subtree(k).convert("code")] += (
+                    self.parameter.probability(T) / n
+                )
+        return d
+
+
+class RandomCut(RandomRecursiveTree):
+    """
+    Random cut T of a supertree U, which can itself be random (but with
+    fixed size).
+    """
+
+    def __init__(self, U: RandomRecursiveTree):
+        self.size = None
+        self.object = "recursive tree"
+        self.name = "cut"
+        self.parameter = U
+
+    def __repr__(self):
+        return f"Random cut of a {self.parameter}"
+
+    @property
+    def label(self):
+        return self.parameter
+
+    def distribution(self) -> defaultdict:
+        d = defaultdict(float)
+        n = self.parameter.size
+        for k in range(1, n):
+            for T in RecursiveTrees(n):
+                code = T.cut(T.subtree_indices(k)).convert("code")
+                d[code] += self.parameter.probability(T) / (n - 1)
+        return d
+
+
+class PlancherelRecursiveTree(RandomRecursiveTree):
     """
     Class of Plancherel-distributed random recursive trees with n nodes.
     """
 
     def __init__(self, n: int):
         self.size = n
-        self.treetype = "recursive"
-        self.name = "Plancherel"
+        self.object = "recursive tree"
+        self.name = "plancherel"
+        self.parameter = None
 
 
-class UniformRecursiveTree(RandomTree):
+class UniformRecursiveTree(RandomRecursiveTree):
     """
     Class of uniformly distributed random recursive trees with n nodes.
     """
 
     def __init__(self, n: int):
         self.size = n
-        self.treetype = "recursive"
-        self.name = "Uniform"
+        self.object = "recursive tree"
+        self.name = "uniform"
+        self.parameter = None
 
-        self.name = "Uniform"
 
-
-class WeightedRecursiveTree(RandomTree):
+class WeightedRecursiveTree(RandomRecursiveTree):
     """
     Class of random recursive trees with n nodes, chosen according to
     weights given by a function i -> w(i).
@@ -255,12 +194,12 @@ class WeightedRecursiveTree(RandomTree):
 
     def __init__(self, n: int, weight: Callable[[int], float]):
         self.size = n
-        self.treetype = "recursive"
-        self.name = "Weighted"
+        self.object = "recursive tree"
+        self.name = "weighted"
         self.parameter = weight
 
 
-class EwensRecursiveTree(RandomTree):
+class EwensRecursiveTree(RandomRecursiveTree):
     """
     Class of random recursive trees with n nodes, where the partition
     of [1, n-1] associated to subtrees is recursively chosen according
@@ -269,10 +208,6 @@ class EwensRecursiveTree(RandomTree):
 
     def __init__(self, n: int, theta: float = 1):
         self.size = n
-        self.treetype = "recursive"
-        self.name = "Ewens"
+        self.object = "recursive tree"
+        self.name = "ewens"
         self.parameter = theta
-
-    def __repr__(self):
-        A = "Ewens recursive tree with size"
-        return f"{A} {self.size} and parameter {self.parameter}"

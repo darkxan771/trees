@@ -3,7 +3,14 @@
 
 from .helpers import InfiniteSetError
 from .partition import IntegerPartition
+from .random import Random
 from .set_partition import SetPartition
 from .tree import Tree
 
-__all__ = ["InfiniteSetError", "IntegerPartition", "SetPartition", "Tree"]
+__all__ = [
+    "InfiniteSetError",
+    "IntegerPartition",
+    "Random",
+    "SetPartition",
+    "Tree",
+]

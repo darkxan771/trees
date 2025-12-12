@@ -2,16 +2,21 @@
 
 # TODO: tests for set partitions / documentation of methods.
 
-# TODO: container SetPartitions.
-
 
 from __future__ import annotations
 
+from typing import Any
+from typing import Callable
 from typing import Iterable
 from typing import Self
 
 from .helpers import shift_dict
 from .partition import IntegerPartition
+
+compute_conversions: dict[str, Callable] = {
+    "code": lambda P: tuple(tuple(p) for p in P.parts),
+    "dict": lambda P: P.dict,
+}
 
 
 class SetPartition:
@@ -48,6 +53,10 @@ class SetPartition:
         A = isinstance(other, SetPartition)
         B = self.length == other.length
         return A and B and all(self(k) == other(k) for k in range(self.length))
+
+    @property
+    def convert(self) -> Callable[[str], Any]:
+        return lambda typ: compute_conversions[typ](self)
 
     @property
     def length(self) -> int:

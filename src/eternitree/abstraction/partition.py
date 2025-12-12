@@ -2,11 +2,18 @@
 
 from __future__ import annotations
 
+from typing import Any
+from typing import Callable
 from typing import Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.special import factorial
+
+compute_conversions: dict[str, Callable] = {
+    "code": lambda P: tuple(P.parts),
+    "dict": lambda P: P.dictionary,
+}
 
 
 class IntegerPartition:
@@ -37,6 +44,10 @@ class IntegerPartition:
         return A and self.parts == other.parts
 
     @property
+    def convert(self) -> Callable[[str], Any]:
+        return lambda typ: compute_conversions[typ](self)
+
+    @property
     def size(self) -> int:
         """
         The size of the integer partition (sum of its parts).
@@ -55,8 +66,13 @@ class IntegerPartition:
         """
         The multiplicities of the integers as parts of the integer partition.
         """
-        m = max(self.parts)
-        return {i: self.parts.count(i) for i in range(1, m + 1)}
+        s = max(self.parts)
+        res = {}
+        for i in range(1, s + 1):
+            m = self.parts.count(i)
+            if m > 0:
+                res[i] = m
+        return res
 
     @property
     def bell_number(self) -> int:

@@ -87,3 +87,11 @@ class SetPartitions:
         The cardinality of the set of set partitions.
         """
         return bell_number(self.order)
+
+    def example(self) -> SetPartition:
+        """
+        An example of set partition.
+        """
+        from ..random.random_partitions import UniformSetPartition
+
+        return UniformSetPartition(self.set).get_random_element()

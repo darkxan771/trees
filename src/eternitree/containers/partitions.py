@@ -94,3 +94,14 @@ class IntegerPartitions:
             raise InfiniteSetError("Infinite set")
         else:
             return int(generating_series_P(self.order)[-1])
+
+    def example(self) -> IntegerPartition:
+        """
+        An example of integer partition.
+        """
+        if self.order is None:
+            return IntegerPartition([5, 3, 2, 2, 1, 1, 1])
+        else:
+            from ..random.random_partitions import UniformPartition
+
+            return UniformPartition(self.order).get_random_element()

@@ -1,5 +1,7 @@
 # Defines the class RootedTree
 
+# TODO: clarify plancherel measure, this is mostly a recursive tree thing
+
 from __future__ import annotations
 
 from collections import defaultdict
@@ -90,7 +92,7 @@ class RootedTree(Tree):
         """
         from .conversions import compute_conversions
 
-        return lambda str: compute_conversions[str](self)
+        return lambda typ: compute_conversions[typ](self)
 
     @property
     def data(self) -> Callable[[str], np.ndarray]:

@@ -1,65 +1,74 @@
 # Defines abstract classes RandomPartition and RandomSetPartition
 
-from collections import defaultdict
 
-from ..abstraction import IntegerPartition
+from ..abstraction.random import Random
 from ..containers import IntegerPartitions
-from .partition_generators import generate_random
-from .partition_probabilities import compute_probabilities
+from ..containers import SetPartitions
 
 
-class RandomPartition:
-    def __init__(self, n: int, name: str, parameter: float | None = None):
-        self.size = n
+class RandomSetPartition(Random):
+    """
+    A distribution of random set partitions of a given set.
+    """
+
+    def __init__(
+        self, L: int | list[int], name: str, parameter: float | None = None
+    ):
+        if isinstance(L, int):
+            self.set = list(range(L))
+            self.size = L
+        else:
+            self.set = L
+            self.set.sort()
+            self.size = len(L)
+        self.object = "set partition"
         self.name = name
         self.parameter = parameter
 
-    def __repr__(self):
-        res = f"Random partition with size {self.size}"
-        res += f" and {self.name.capitalize()} distribution"
-        if self.parameter is not None:
-            res += f"(parameter = {self.parameter})"
-        return res
+    @property
+    def label(self):
+        return self.set
 
-    def probability(self, L: IntegerPartition) -> float:
-        """
-        Computes the probability of L under the prescribed
-        distribution.
-        """
-        if L.size == self.size:
-            return compute_probabilities[self.name](L, self.parameter)
-        else:
-            return float(0)
-
-    def distribution(self) -> defaultdict:
-        """
-        Returns a dictionary with items (L, probability[L]), where L runs
-        over the set of integer partitions with size n, and probability[L]
-        is the probability of L under the prescribed distribution.
-        """
-        return defaultdict(
-            float,
-            {
-                tuple(L.parts): self.probability(L)
-                for L in IntegerPartitions(self.size)
-            },
-        )
-
-    def get_random_element(self) -> IntegerPartition:
-        """
-        Picks at random an integer partition under the prescribed
-        distribution.
-        """
-        return generate_random[self.name](self.size, self.parameter)
+    def container(self):
+        return SetPartitions(self.set)
 
 
-def UniformPartition(n: int):
+class RandomPartition(Random):
+    """
+    A distribution of integer partitions with a given size n.
+    """
+
+    def __init__(self, n: int, name: str, parameter: float | None = None):
+        self.size = n
+        self.object = "partition"
+        self.name = name
+        self.parameter = parameter
+
+    @property
+    def label(self):
+        return self.size
+
+    def container(self):
+        return IntegerPartitions(self.size)
+
+
+def UniformSetPartition(L: int | list[int]) -> RandomSetPartition:
+    return RandomSetPartition(L, "uniform")
+
+
+def UniformPartition(n: int) -> RandomPartition:
     return RandomPartition(n, "uniform")
 
 
-def PlancherelPartition(n: int):
+def PlancherelPartition(n: int) -> RandomPartition:
     return RandomPartition(n, "plancherel")
 
 
-def EwensPartition(n: int, theta: float = 1):
+def EwensSetPartition(
+    L: int | list[int], theta: float = 1
+) -> RandomSetPartition:
+    return RandomSetPartition(L, "ewens", theta)
+
+
+def EwensPartition(n: int, theta: float = 1) -> RandomPartition:
     return RandomPartition(n, "ewens", theta)

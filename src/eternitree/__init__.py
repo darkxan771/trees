@@ -8,6 +8,7 @@ from .containers import SetPartitions
 from .random import CrumpJagersModeProcess
 from .random import EwensPartition
 from .random import EwensRecursiveTree
+from .random import EwensSetPartition
 from .random import LogPoissonDirichlet
 from .random import PlancherelPartition
 from .random import PlancherelRecursiveTree
@@ -19,6 +20,7 @@ from .random import RandomSubtree
 from .random import UniformPartition
 from .random import UniformRecursiveTree
 from .random import UniformRootedTree
+from .random import UniformSetPartition
 from .random import WeightedRecursiveTree
 from .recursive import RecursiveTree
 from .rooted import RootedTree
@@ -26,6 +28,7 @@ from .rooted import RootedTree
 __all__ = [
     "CrumpJagersModeProcess",
     "EwensPartition",
+    "EwensSetPartition",
     "EwensRecursiveTree",
     "IntegerPartition",
     "IntegerPartitions",
@@ -46,6 +49,7 @@ __all__ = [
     "UniformPartition",
     "UniformRecursiveTree",
     "UniformRootedTree",
+    "UniformSetPartition",
     "WeightedRecursiveTree",
     "graphic_options",
 ]
