@@ -2,6 +2,8 @@ dist/
 old/
 jupyter/.ipynb_checkpoints/
 jupyter/.virtual_documents/
+.ipynb_checkpoints/
+.virtual_documents/
 
 src/eternitree.egg-info/
 

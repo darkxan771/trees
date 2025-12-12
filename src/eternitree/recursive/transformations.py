@@ -3,7 +3,9 @@
 
 import numpy as np
 
-from ..abstraction.helpers import shift_array, shift_dict, standardisation
+from ..abstraction.helpers import shift_array
+from ..abstraction.helpers import shift_dict
+from ..abstraction.helpers import standardisation
 from ..containers.trees import RecursiveTrees
 from .recursive_tree import RecursiveTree
 
@@ -22,7 +24,6 @@ def tree_subtree(
             S.parent[i] = dict_sub[T.parent[sub[i]]]
         else:
             S.parent[i] = -1
-        S.children[i] = [dict_sub[int(n)] for n in T.children[sub[i]]]
     S.size = T.size[sub].copy()
     S.depth = T.depth[sub].copy() - T.depth[k]
     S.weight = T.weight[sub].copy()
@@ -67,8 +68,6 @@ def tree_add_node(T: RecursiveTree, k: int, **kwargs) -> None:
     n = T.number_of_vertices
     T.parent[n] = k
     T.depth[n] = T.depth[k] + 1
-    T.children[n] = []
-    T.children[k] += [n]
     if "map_weights" in kwargs:
         func = kwargs["map_weights"]
         T.weight[:n] = np.vectorize(func)(T.weight[:n])
@@ -102,17 +101,11 @@ def tree_insert_node(T: RecursiveTree, l: int, parent: int, **kwargs) -> None:
     shift_array(T.size, l, n)
     shift_array(T.depth, l, n)
     shift_array(T.weight, l, n)
-    for k in range(n):
-        T.children[k] = [a + 1 if a >= l else a for a in T.children[k]]
-    shift_array(T.children, l, n)
     T.birth_times = shift_dict(T.birth_times, l, n)
     T.birth_processes = shift_dict(T.birth_processes, l, n)
     T.parent[l] = parent
-    T.children[parent].append(l)
-    T.children[parent].sort()
     T.weight[l] = 1
     T.depth[l] = T.depth[parent] + 1
-    T.children[l] = []
     T.size[l] = 0
     for k in T.path_to_root(l):
         T.size[k] += 1

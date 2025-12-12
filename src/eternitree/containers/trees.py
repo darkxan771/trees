@@ -2,12 +2,14 @@
 # DoubleRecursiveTrees is a particular instance of RecursiveTrees
 
 from collections.abc import Sequence
-from itertools import chain, count
+from itertools import chain
+from itertools import count
 
 import numpy as np
 from scipy.special import factorial
 
 from ..abstraction import InfiniteSetError
+from ..abstraction import Tree
 from ..boltzmann.boltzmann_tree import generating_series_T
 from ..recursive import RecursiveTree
 from ..recursive.conversions import permutation_to_code
@@ -142,9 +144,10 @@ class RecursiveTrees:
                 RecursiveTrees(n, self.double) for n in count(1)
             ).__iter__()
 
+    @property
     def cardinality(self) -> int:
         """
-        Returns the cardinality of the set of (double) recursive trees.
+        The cardinality of the set of (double) recursive trees.
         """
         n = self.order
         if n is None:
@@ -155,7 +158,7 @@ class RecursiveTrees:
         else:
             return factorial(n - 1, True)
 
-    def example(self) -> RecursiveTree:
+    def example(self) -> Tree:
         """
         A recursive tree with 15 vertices.
         """
@@ -166,7 +169,9 @@ class RecursiveTrees:
                 _ = T.add_node(i)
             return T
         else:
-            raise NotImplementedError
+            from ..random.random_trees import UniformRecursiveTree
+
+            return UniformRecursiveTree(self.order).get_random_element()
 
     def from_permutation(self, p: Sequence[int]) -> RecursiveTree:
         """
@@ -251,6 +256,7 @@ class RootedTrees:
                 RootedTrees(n) for n in count(1)
             ).__iter__()
 
+    @property
     def cardinality(self) -> int:
         """
         Returns the cardinality of the set of rooted trees with
@@ -268,7 +274,7 @@ class RootedTrees:
         else:
             return int(generating_series_T(self.order)[-1])
 
-    def example(self) -> RootedTree:
+    def example(self) -> Tree:
         """
         A rooted tree with 15 vertices.
         """
@@ -276,7 +282,9 @@ class RootedTrees:
             nested = [[[[[[[[]], []], [], []], [[]], []], []]]]
             return self.from_nested_list(nested)
         else:
-            raise NotImplementedError
+            from ..random.random_trees import UniformRootedTree
+
+            return UniformRootedTree(self.order).get_random_element()
 
     def from_code(self, L: Sequence[int]) -> RootedTree:
         """

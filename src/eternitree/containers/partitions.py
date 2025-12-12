@@ -1,8 +1,10 @@
 # Defines an IntegerPartitions container
 
-from itertools import chain, count
+from itertools import chain
+from itertools import count
 
-from ..abstraction import InfiniteSetError, IntegerPartition
+from ..abstraction import InfiniteSetError
+from ..abstraction import IntegerPartition
 from ..boltzmann.boltzmann_partition import generating_series_P
 
 
@@ -46,7 +48,11 @@ class _IntegerPartitionsIterator_n:
 
 class IntegerPartitions:
     """
-    A container for integer partitions with a given size n.
+    A container for integer partitions.
+
+    If a size n is given, the container is restricted to integer
+    partitions with size n. In any case, one can iterate upon the
+    container.
     """
 
     def __init__(self, n: None | int = None):
@@ -58,7 +64,7 @@ class IntegerPartitions:
         else:
             return f"Integer partitions with size {self.order}"
 
-    def __contains__(self, L):
+    def __contains__(self, L: IntegerPartition):
         A = isinstance(L, IntegerPartition)
         if self.order is not None:
             return A and L.size == self.order
@@ -73,6 +79,7 @@ class IntegerPartitions:
                 IntegerPartitions(n) for n in count(1)
             ).__iter__()
 
+    @property
     def cardinality(self) -> int:
         """
         Returns the cardinality of the set of integer partitions with

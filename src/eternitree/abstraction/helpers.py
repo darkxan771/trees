@@ -30,16 +30,18 @@ def shift_array(L: np.ndarray, l: int, n: int) -> None:
     L[l + 1 : n + 1] = L[l:n]
 
 
-def shift_dict(d: dict, l: int, n: int) -> dict:
+def shift_dict(d: dict, l: int, n: int, sign: int = 1) -> dict:
     """
     Shift by one index all the keys of a dictionary between l and n.
+    Put sign = -1 to shift in the other direction (then, the (l-1)-th
+    entry is deleted).
     """
     res = {}
     L = list(d.keys())
     L.sort()
     for k in L:
         if l <= k < n:
-            res[k + 1] = d[k]
+            res[k + sign] = d[k]
         else:
             res[k] = d[k]
     return res

@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Callable
+from typing import Any
+from typing import Callable
 
 import numpy as np
 from scipy.special import factorial

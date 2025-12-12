@@ -92,7 +92,7 @@ class RandomTree(Protocol):
             res[p] += self.probability(T)
         return res
 
-    def get_random_element(self) -> RootedTree | RecursiveTree:
+    def get_random_element(self) -> Tree:
         """
         Picks a tree at random under the prescribed distribution.
         """
@@ -172,7 +172,7 @@ class RandomCut(RandomTree):
         n = self.parameter.size
         for k in range(1, n):
             for T in RecursiveTrees(n):
-                code = T.cut(k).convert("code")
+                code = T.cut(T.subtree_indices(k)).convert("code")
                 d[code] += self.parameter.probability(T) / (n - 1)
         return d
 
@@ -187,7 +187,7 @@ class UniformRootedTree(RandomTree):
         self.treetype = "rooted"
         self.name = "Uniform"
 
-    def get_random_element(self, exact: bool = True) -> RootedTree:
+    def get_random_element(self, exact: bool = True) -> Tree:
         """
         Picks at random a rooted unlabelled tree with size n.
 

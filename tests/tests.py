@@ -6,17 +6,15 @@ import numpy as np
 
 sys.path.insert(0, "../src/")
 
-from eternitree.abstraction import (
-    IntegerPartition,
-)
-from eternitree.containers import IntegerPartitions, RecursiveTrees, RootedTrees
-from eternitree.random import (
-    PlancherelPartition,
-    PlancherelRecursiveTree,
-    UniformPartition,
-    UniformRecursiveTree,
-    UniformRootedTree,
-)
+from eternitree.abstraction import IntegerPartition
+from eternitree.containers import IntegerPartitions
+from eternitree.containers import RecursiveTrees
+from eternitree.containers import RootedTrees
+from eternitree.random import PlancherelPartition
+from eternitree.random import PlancherelRecursiveTree
+from eternitree.random import UniformPartition
+from eternitree.random import UniformRecursiveTree
+from eternitree.random import UniformRootedTree
 from eternitree.recursive import RecursiveTree
 
 
@@ -34,6 +32,23 @@ def test_recursive(verbose=True):
     assert T.number_of_edges == 14
     assert T.number_of_vertices == 15
     assert T.height == 3
+    assert T.children == [
+        [1, 2, 3, 4, 7],
+        [5, 6, 10, 12],
+        [9],
+        [13],
+        [8, 14],
+        [],
+        [11],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+    ]
     assert T.profile.tolist() == [1, 5, 8, 1]
     assert T.subtrees_partition.parts == [6, 3, 2, 2, 1]
     assert T.path_to_root(6) == [0, 1, 6]
@@ -78,7 +93,7 @@ def test_recursive(verbose=True):
 
     T2 = RecursiveTrees().example()
     assert T2 == T
-    T2.insert_node(10, 2)
+    T2.convert("recursive").insert_node(10, 2)
     assert T2.convert("code") == (0, 0, 0, 0, 1, 1, 0, 4, 2, 2, 1, 6, 1, 3, 4)
 
     T.weight = np.array([15, 13, 14, 6, 5, 9, 12, 11, 2, 8, 7, 10, 3, 1, 4])
@@ -93,7 +108,7 @@ def test_recursive(verbose=True):
 
     Rec = RecursiveTrees(15)
     assert T in Rec
-    assert Rec.cardinality() == 87178291200
+    assert Rec.cardinality == 87178291200
     assert Rec.from_permutation(permutation) == T
     assert Rec.from_code(code) == T
     assert Rec.from_KP_insertion_array(KP) == T
@@ -121,7 +136,7 @@ def test_rooted(verbose=True):
     assert T.u == 194400
     assert T.sym == 2
     assert Root.from_code(code) == T
-    assert Root.cardinality() == 87811
+    assert Root.cardinality == 87811
 
     if verbose:
         T.plot()
@@ -132,7 +147,7 @@ def test_partition(verbose=True):
     P = IntegerPartition([5, 3, 2, 2])
     P12 = IntegerPartitions(12)
 
-    assert len(list(P12)) == P12.cardinality() == 77
+    assert len(list(P12)) == P12.cardinality == 77
     assert P in P12
     assert P.size == 12
     assert P.length == 4

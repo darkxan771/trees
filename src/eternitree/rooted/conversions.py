@@ -4,7 +4,6 @@ from collections.abc import Sequence
 from typing import Callable
 
 import networkx as nx
-import numpy as np
 
 from ..recursive import RecursiveTree
 from .rooted_tree import RootedTree
@@ -67,7 +66,6 @@ def _insert_in_recursive_tree(
     T: RootedTree, RT: RecursiveTree, d: int, mini: int, maxi: int
 ) -> None:
     sizes = [c.size for c in T.subtrees]
-    RT.children[mini] = (mini + 1 + np.cumsum(np.array([0] + sizes))[:-1]).tolist()
     RT.weight[mini] = 1
     RT.depth[mini] = d
     RT.size[mini] = maxi - mini

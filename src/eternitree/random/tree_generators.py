@@ -6,7 +6,6 @@ import numpy as np
 import numpy.random as rand
 
 from ..recursive import RecursiveTree
-from .crump_jagers_mode import PointProcess
 from .random_partitions import EwensPartition
 
 
@@ -59,7 +58,7 @@ def plancherel_tree(n: int) -> RecursiveTree:
     """
     T = RecursiveTree(max_size=n)
     L = [0]
-    (w, J) = _random_pairs(n)
+    w, J = _random_pairs(n)
     for k in range(1, n):
         i = L[k - w[k - 1]]
         T.add_node(i)
@@ -106,21 +105,8 @@ def ewens_recursive_tree(n: int, theta: float) -> RecursiveTree:
             T.parent[perm[c + 1 : c + k]] = loc_dict[loc_tree.parent[1:k]]
             T.size[perm[c : c + k]] = loc_tree.size[:k]
             T.depth[perm[c : c + k]] = loc_tree.depth[:k] + 1
-            T.children[0].append(perm[c])
-            for j, x in enumerate(perm[c : c + k]):
-                T.children[x] = (loc_dict[loc_tree.children[j]]).tolist()
             c += k
     return T
-
-
-def CJM_recursive_tree(n: int, pp: PointProcess):
-    """
-    Picks at random a recursive tree with size n, chosen according to a
-    Crump-Jagers-Mode branching process.
-    """
-    base = pp
-    R = RecursiveTree()
-    return R.resize(n)
 
 
 compute_random_trees: dict[tuple[str, str], Callable] = {
@@ -131,5 +117,4 @@ compute_random_trees: dict[tuple[str, str], Callable] = {
     ("Plancherel", "recursive"): lambda n, _: plancherel_tree(n),
     ("Weighted", "recursive"): weighted_recursive_tree,
     ("Ewens", "recursive"): ewens_recursive_tree,
-    ("Crump-Jagers-Mode", "recursive"): CJM_recursive_tree,
 }

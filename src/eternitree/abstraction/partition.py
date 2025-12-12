@@ -1,9 +1,11 @@
 # Defines the abstract IntegerPartition class
 
 from __future__ import annotations
-import numpy as np
-import matplotlib.pyplot as plt
+
 from typing import Sequence
+
+import matplotlib.pyplot as plt
+import numpy as np
 from scipy.special import factorial
 
 
@@ -111,6 +113,6 @@ class IntegerPartition:
         """
         from .plot import draw_partition_on_ax
 
-        fig, ax = plt.subplots()
+        _, ax = plt.subplots()
         draw_partition_on_ax(self, ax, style)
         plt.show()

@@ -1,17 +1,21 @@
 # Defines the class RecursiveTree
 
+
 from __future__ import annotations
 
-from typing import Any, Callable, Self
+from typing import Any
+from typing import Callable
+from typing import Self
 
 import numpy as np
 import numpy.random as rand
 
-from ..abstraction import IntegerPartition, Tree
+from ..abstraction import IntegerPartition
+from ..abstraction import Tree
 
 compute_data: dict[str, Callable] = {
     "degree": lambda T: np.vectorize(lambda L: len(L))(
-        T.children[: T.number_of_vertices]
+        np.array(T.children, dtype=object)
     ),
     "depth": lambda T: T.depth[: T.number_of_vertices],
     "size": lambda T: T.size[: T.number_of_vertices],
@@ -35,7 +39,6 @@ class RecursiveTree(Tree):
       T.size[0] = n.
     - T.depth[i] is the depth of the node i (distance to the root). In
       particular, T.depth[0] = 0.
-    - T.children[i] contains the list of the children of the node i.
 
     For branching processes, the birth times and birth_processes
     are saved in T.birth_times and T.birth_processes.
@@ -49,8 +52,6 @@ class RecursiveTree(Tree):
         self.size[0] = 1
         self.depth = -np.ones(max_size, dtype=int)
         self.depth[0] = 0
-        self.children = np.empty(max_size, dtype=object)
-        self.children[0] = []
         self.limit = max_size
         self.birth_times: dict[int, float] = {}
         self.birth_processes: dict = {}
@@ -122,13 +123,28 @@ class RecursiveTree(Tree):
             [np.count_nonzero(self.depth == d) for d in range(h + 1)]
         )
 
+    def children_of_node(self, k) -> list[int]:
+        """
+        Returns the list of the children of the node k.
+        """
+        n = self.number_of_vertices
+        return [x for x in range(k + 1, n) if self.parent[x] == k]
+
+    @property
+    def children(self) -> list[list[int]]:
+        """
+        A list of lists of the children of each node of the tree.
+        """
+        n = self.number_of_vertices
+        return [self.children_of_node(k) for k in range(n)]
+
     @property
     def subtrees_partition(self) -> IntegerPartition:
         """
         The integer partition with size n-1 corresponding to the
         sizes of the subtrees attached to the root.
         """
-        children = np.array(self.children[0])
+        children = np.array(self.children_of_node(0))
         res = self.size[children].tolist()
         res.sort(reverse=True)
         return IntegerPartition(res)
@@ -161,17 +177,18 @@ class RecursiveTree(Tree):
         """
         The row positions of the nodes.
         """
+        children = self.children
         res = np.zeros(self.number_of_vertices, dtype=int)
         h = self.height
         count = np.zeros(h, dtype=int)
         level = [0]
-        next_level = self.children[0]
+        next_level = children[0]
         for d in range(h):
             for x in next_level:
                 res[x] = count[d]
                 count[d] += 1
             level = next_level
-            next_level = sum([self.children[x] for x in level], [])
+            next_level = sum([children[x] for x in level], [])
         return res
 
     @property
@@ -197,7 +214,14 @@ class RecursiveTree(Tree):
         """
         Returns the set of indices in the subtree based at k.
         """
-        L = sum([self.subtree_indices(int(n)) for n in self.children[k]], [k])
+        n = self.number_of_vertices
+        L = [k]
+        to_be_computed = [k]
+        while len(to_be_computed) > 0:
+            l = to_be_computed.pop(0)
+            toadd = [x for x in range(l + 1, n) if self.parent[x] == l]
+            to_be_computed += toadd
+            L += toadd
         L.sort()
         return L
 
@@ -279,7 +303,7 @@ class RecursiveTree(Tree):
         """
         The list of subtrees of the tree.
         """
-        return [self.subtree(k) for k in self.children[0]]
+        return [self.subtree(k) for k in self.children_of_node(0)]
 
     def cut(
         self, L: list[int], renormalise_weights: bool = False
@@ -379,10 +403,8 @@ class RecursiveTree(Tree):
         """
         Picks a random node and returns the corresponding recursive subtree.
         """
-        from ..random.random_trees import (
-            DeterministicRecursiveTree,
-            RandomSubtree,
-        )
+        from ..random.random_trees import DeterministicRecursiveTree
+        from ..random.random_trees import RandomSubtree
 
         return RandomSubtree(DeterministicRecursiveTree(self))
 
@@ -390,7 +412,8 @@ class RecursiveTree(Tree):
         """
         Picks a random node and returns the corresponding cut.
         """
-        from ..random.random_trees import DeterministicRecursiveTree, RandomCut
+        from ..random.random_trees import DeterministicRecursiveTree
+        from ..random.random_trees import RandomCut
 
         return RandomCut(DeterministicRecursiveTree(self))
 
@@ -432,7 +455,3 @@ class RecursiveTree(Tree):
         self.weight[:n] = self.weight[d]
         self.size[:n] = self.size[d]
         self.depth[:n] = self.depth[d]
-        new_children = np.empty(n, dtype=object)
-        for k in range(n):
-            new_children[k] = dinv[self.children[d[k]]].tolist()
-        self.children[:n] = new_children

@@ -6,7 +6,8 @@ import numpy as np
 from scipy.special import factorial
 
 from ..abstraction import Tree
-from ..containers import RecursiveTrees, RootedTrees
+from ..containers import RecursiveTrees
+from ..containers import RootedTrees
 from ..recursive import RecursiveTree
 from ..rooted import RootedTree
 from .random_partitions import EwensPartition
@@ -17,7 +18,7 @@ def probability_uniform_rooted(T: Tree) -> float:
     Returns the probability of the rooted tree T under the
     uniform distribution on trees with the same size.
     """
-    return float(1 / RootedTrees(T.number_of_vertices).cardinality())
+    return float(1 / RootedTrees(T.number_of_vertices).cardinality)
 
 
 def probability_uniform_recursive(T: Tree) -> float:
@@ -25,7 +26,7 @@ def probability_uniform_recursive(T: Tree) -> float:
     Returns the probability of the recursive tree T under
     the uniform distribution on trees with the same size.
     """
-    return float(1 / RecursiveTrees(T.number_of_vertices).cardinality())
+    return float(1 / RecursiveTrees(T.number_of_vertices).cardinality)
 
 
 def probability_plancherel(T: Tree) -> float:

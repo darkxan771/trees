@@ -22,16 +22,17 @@ from .tree import Tree
 
 
 def angles(T: RecursiveTree) -> np.ndarray:
-    n = T.size[0]
+    n = T.number_of_vertices
+    C = T.children
     angle_min = np.zeros(n, dtype=float)
     angle_max = np.zeros(n, dtype=float)
     angle_max[0] = 2 * np.pi
     for i in range(1, n):
         p = T.parent[i]
-        j = list(T.children[p]).index(i)
+        j = list(C[p]).index(i)
         denom = T.size[p] - 1
-        tmin = sum(T.size[k] for k in T.children[p][:j]) / denom
-        tmax = sum(T.size[k] for k in T.children[p][: j + 1]) / denom
+        tmin = sum(T.size[k] for k in C[p][:j]) / denom
+        tmax = sum(T.size[k] for k in C[p][: j + 1]) / denom
         if p == 0:
             angle_min[i] = tmin * 2 * np.pi
             angle_max[i] = tmax * 2 * np.pi
@@ -43,7 +44,7 @@ def angles(T: RecursiveTree) -> np.ndarray:
 
 
 def radii(T: RecursiveTree, style: str = "circular") -> np.ndarray:
-    D = T.depth[: T.size[0]]
+    D = T.depth[: T.number_of_vertices]
     if style == "log-circular":
         return np.log(1 + D)
     else:

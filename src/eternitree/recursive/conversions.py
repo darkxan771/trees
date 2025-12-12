@@ -55,7 +55,8 @@ def tree_to_networkx(T: RecursiveTree) -> nx.classes.digraph.DiGraph:
     Encodes the tree in a NetworkX labelled digraph.
     """
     n = T.number_of_vertices
-    G = nx.DiGraph({i: T.children[i] for i in range(n)})
+    C = T.children
+    G = nx.DiGraph({i: C[i] for i in range(n)})
     for i in range(n):
         G.nodes[i]["label"] = i
         G.nodes[i]["depth"] = T.depth[i]
@@ -81,7 +82,7 @@ def tree_to_dataframe(T: RecursiveTree) -> pd.DataFrame:
             T.weight[:n],
             T.size[:n],
             T.depth[:n],
-            T.children[:n],
+            np.array(T.children, dtype=object),
         ]
     )
     row_names = np.array(["parent", "weight", "size", "depth", "children"])
