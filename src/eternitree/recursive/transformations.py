@@ -6,7 +6,6 @@ import numpy as np
 from ..abstraction.helpers import shift_array
 from ..abstraction.helpers import shift_dict
 from ..abstraction.helpers import standardisation
-from ..containers.trees import RecursiveTrees
 from .recursive_tree import RecursiveTree
 
 
@@ -33,7 +32,7 @@ def tree_subtree(
         S.birth_times = {}
         for l in sub:
             S.birth_times[dict_sub[l]] = T.birth_times[l] - T.birth_times[k]
-            S.birth_processes[dict_sub[l]] = T.birth_processes[l]
+            S.birth_processes[dict_sub[l]] = T.birth_processes[l].copy()
     return S
 
 
@@ -57,7 +56,7 @@ def tree_cut(
     for l in keep:
         if l in T.birth_times.keys():
             C.birth_times[dict_keep[l]] = T.birth_times[l]
-            C.birth_processes[dict_keep[l]] = T.birth_processes[l]
+            C.birth_processes[dict_keep[l]] = T.birth_processes[l].copy()
     return C
 
 
@@ -113,8 +112,3 @@ def tree_insert_node(T: RecursiveTree, l: int, parent: int, **kwargs) -> None:
         T.birth_times[l] = kwargs["birth_time"]
     if "birth_process" in kwargs:
         T.birth_processes[l] = kwargs["birth_process"]
-    code = T.convert("code")
-    RT = RecursiveTrees()
-    test = RT.from_code(list(code))
-    if not T == test:
-        raise ValueError("WTF")

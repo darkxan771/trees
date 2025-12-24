@@ -20,7 +20,7 @@ def bell_number(n):
 
 class _SetPartitionsIterator_n:
     def __init__(self, L: list[int]):
-        self.set = L
+        self.set = L.copy()
         self.set.sort()
         self.order = len(L)
         self.current = np.zeros((2, self.order), dtype=int)
@@ -62,7 +62,7 @@ class SetPartitions:
     """
 
     def __init__(self, L: list[int]):
-        self.set = L
+        self.set = L.copy()
         self.set.sort()
 
     def __repr__(self):

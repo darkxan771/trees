@@ -10,11 +10,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.special import factorial
 
-compute_conversions: dict[str, Callable] = {
-    "code": lambda P: tuple(P.parts),
-    "dict": lambda P: P.dictionary,
-}
-
 
 class IntegerPartition:
     """
@@ -36,30 +31,35 @@ class IntegerPartition:
     def __repr__(self):
         return self.parts.__repr__()
 
-    def __hash__(self):
-        return hash(tuple(self.parts))
-
     def __eq__(self, other):
         A = isinstance(other, IntegerPartition)
         return A and self.parts == other.parts
 
+    def __abs__(self):
+        return sum(self.parts)
+
+    def __len__(self):
+        return len(self.parts)
+
     @property
     def convert(self) -> Callable[[str], Any]:
-        return lambda typ: compute_conversions[typ](self)
+        from .conversions import conversions
+
+        return lambda S: conversions[("partition", S)](self)
 
     @property
     def size(self) -> int:
         """
         The size of the integer partition (sum of its parts).
         """
-        return sum(self.parts)
+        return abs(self)
 
     @property
     def length(self) -> int:
         """
         The length of the integer partition (number of parts).
         """
-        return len(self.parts)
+        return len(self)
 
     @property
     def dictionary(self) -> dict[int, int]:

@@ -1,11 +1,9 @@
 # Defines the class RootedTree
 
-# TODO: clarify plancherel measure, this is mostly a recursive tree thing
 
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any
 from typing import Callable
 
 import numpy as np
@@ -24,18 +22,18 @@ class RootedTree(Tree):
         self.subtrees = list(subtrees)
         self.subtrees.sort(key=(lambda x: x.code), reverse=True)
         self.size = 1 + sum([child.size for child in self.subtrees])
-        from .conversions import tree_to_code
+        from ..abstraction.conversions import rooted_to_code
 
-        self.code = tree_to_code(self)
+        self.code = rooted_to_code(self)
 
-    def __repr__(self):
-        return f"Rooted tree of size {self.size}"
+    def __abs__(self):
+        return self.size
 
-    def __hash__(self):
-        return hash(self.code)
-
-    def __eq__(self, other):
-        return isinstance(other, RootedTree) and (self.code == other.code)
+    def __len__(self):
+        if self.subtrees == []:
+            return 0
+        else:
+            return 1 + max([child.height for child in self.subtrees])
 
     ##############
     # Properties #
@@ -44,23 +42,6 @@ class RootedTree(Tree):
     @property
     def type(self) -> str:
         return "rooted"
-
-    @property
-    def number_of_vertices(self) -> int:
-        """
-        The number of vertices of the tree.
-        """
-        return self.size
-
-    @property
-    def height(self) -> int:
-        """
-        The height of the tree (maximal depth of a node).
-        """
-        if self.subtrees == []:
-            return 0
-        else:
-            return 1 + max([child.height for child in self.subtrees])
 
     @property
     def profile(self) -> np.ndarray:
@@ -81,18 +62,6 @@ class RootedTree(Tree):
     @property
     def weights(self) -> np.ndarray:
         return np.ones(self.size, dtype=int)
-
-    @property
-    def convert(self) -> Callable[[str], Any]:
-        """
-        Converts the rooted tree to another type. Available
-        formats are:
-        "code", "nested_list", "networkx", "rooted",
-        "recursive", "dataframe", "KP_insertion_array".
-        """
-        from .conversions import compute_conversions
-
-        return lambda typ: compute_conversions[typ](self)
 
     @property
     def data(self) -> Callable[[str], np.ndarray]:
@@ -133,6 +102,9 @@ class RootedTree(Tree):
     def plancherel_measure(self) -> float:
         """
         The Plancherel measure of the rooted tree.
+
+        Notice that this differs from the probability given by PlancherelRecursiveTree,
+        because this class produces recursive trees instead of rooted trees.
         """
         num = self.d * self.u
         denum = np.prod(

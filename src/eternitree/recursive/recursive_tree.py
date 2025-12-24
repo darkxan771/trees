@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-from typing import Any
 from typing import Callable
 from typing import Self
 
@@ -56,16 +55,11 @@ class RecursiveTree(Tree):
         self.birth_times: dict[int, float] = {}
         self.birth_processes: dict = {}
 
-    def __repr__(self):
-        return "Recursive tree with size " + str(self.size[0])
+    def __abs__(self):
+        return int(self.size[0])
 
-    def __hash__(self):
-        return hash(self.convert("code"))
-
-    def __eq__(self, other):
-        A = isinstance(other, RecursiveTree)
-        B = self.convert("code") == other.convert("code")
-        return A and B
+    def __len__(self):
+        return int(np.max(self.depth))
 
     def copy(self, new_size: int | None = None) -> RecursiveTree:
         """
@@ -98,20 +92,6 @@ class RecursiveTree(Tree):
     @property
     def type(self) -> str:
         return "recursive"
-
-    @property
-    def number_of_vertices(self) -> int:
-        """
-        The size of the tree (number of vertices).
-        """
-        return int(self.size[0])
-
-    @property
-    def height(self) -> int:
-        """
-        The height of the tree (maximal depth of a node).
-        """
-        return int(np.max(self.depth))
 
     @property
     def profile(self) -> np.ndarray:
@@ -155,18 +135,6 @@ class RecursiveTree(Tree):
         The weights of the nodes of the recursive tree.
         """
         return self.weight[: self.number_of_vertices]
-
-    @property
-    def convert(self) -> Callable[[str], Any]:
-        """
-        Converts the recursive tree to another type. Available
-        formats are:
-        "code", "permutation", "networkx", "rooted",
-        "recursive", "dataframe", "KP_insertion_array".
-        """
-        from .conversions import compute_conversions
-
-        return lambda str: compute_conversions[str](self)
 
     @property
     def data(self) -> Callable[[str], np.ndarray]:

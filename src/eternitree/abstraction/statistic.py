@@ -1,7 +1,7 @@
 # Defines an abstract class TreeStatistic
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 from .tree import Tree
 
@@ -69,7 +69,7 @@ class TreeStatistic:
         Plots the histogram of the distribution of the tree statistic.
         """
         dist = self.array
-        fig, ax = plt.subplots()
+        _, ax = plt.subplots()
         L = min(limit, len(dist))
         ax.bar(np.arange(L), dist[:L])
         ax.set_xticks(np.arange(L))

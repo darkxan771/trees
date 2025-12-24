@@ -10,11 +10,11 @@ from scipy.special import factorial
 
 from ..abstraction import InfiniteSetError
 from ..abstraction import Tree
+from ..abstraction.conversions import code_to_nested_list
+from ..abstraction.conversions import permutation_to_code
 from ..boltzmann.boltzmann_tree import generating_series_T
 from ..recursive import RecursiveTree
-from ..recursive.conversions import permutation_to_code
 from ..rooted import RootedTree
-from ..rooted.conversions import code_to_nested_list
 
 #############
 # Iterators #

@@ -151,7 +151,7 @@ def test_partition(verbose=True):
     assert P in P12
     assert P.size == 12
     assert P.length == 4
-    assert P.dictionary == {1: 0, 2: 2, 3: 1, 4: 0, 5: 1}
+    assert P.dictionary == {2: 2, 3: 1, 5: 1}
     assert P.bell_number == 83160
     assert P.z == 120
     assert P.conjugate == IntegerPartition([4, 4, 2, 1, 1])

@@ -13,11 +13,6 @@ from typing import Self
 from .helpers import shift_dict
 from .partition import IntegerPartition
 
-compute_conversions: dict[str, Callable] = {
-    "code": lambda P: tuple(tuple(p) for p in P.parts),
-    "dict": lambda P: P.dict,
-}
-
 
 class SetPartition:
     """
@@ -54,16 +49,24 @@ class SetPartition:
         B = self.length == other.length
         return A and B and all(self(k) == other(k) for k in range(self.length))
 
+    def __abs__(self):
+        return len(self.set)
+
+    def __len__(self):
+        return len(list(self.dict.keys()))
+
     @property
     def convert(self) -> Callable[[str], Any]:
-        return lambda typ: compute_conversions[typ](self)
+        from .conversions import conversions
+
+        return lambda S: conversions[("set_partition", S)](self)
 
     @property
     def length(self) -> int:
         """
         The length of the set partition (number of parts).
         """
-        return len(list(self.dict.keys()))
+        return len(self)
 
     @property
     def set(self) -> list:
@@ -79,7 +82,7 @@ class SetPartition:
         """
         The size of the set partition (sum of the sizes of its parts).
         """
-        return len(self.set)
+        return abs(self)
 
     @property
     def composition(self) -> list[int]:

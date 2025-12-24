@@ -1,6 +1,8 @@
 # Defines the abstract Tree class
 
-from typing import Any, Callable, Protocol
+from typing import Any
+from typing import Callable
+from typing import Protocol
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -13,18 +15,39 @@ sns.set_theme()
 
 
 class Tree(Protocol):
+
+    def __repr__(self):
+        return f"{self.type.capitalize()} tree of size {abs(self)}"
+
+    def __abs__(self) -> int: ...
+
+    def __len__(self) -> int: ...
+
+    def __eq__(self, other):
+        A = isinstance(other, self.__class__)
+        B = self.convert("code") == other.convert("code")
+        return A and B
+
     @property
     def type(self) -> str: ...
 
     @property
-    def number_of_vertices(self) -> int: ...
+    def number_of_vertices(self) -> int:
+        """
+        The number of vertices of the tree.
+        """
+        return abs(self)
 
     @property
     def number_of_edges(self) -> int:
         return self.number_of_vertices - 1
 
     @property
-    def height(self) -> int: ...
+    def height(self) -> int:
+        """
+        The height of the tree (maximal depth of a node).
+        """
+        return len(self)
 
     @property
     def profile(self) -> np.ndarray: ...
@@ -46,7 +69,10 @@ class Tree(Protocol):
     def weights(self) -> np.ndarray: ...
 
     @property
-    def convert(self) -> Callable[[str], Any]: ...
+    def convert(self) -> Callable[[str], Any]:
+        from .conversions import conversions
+
+        return lambda S: conversions[(self.type, S)](self)
 
     @property
     def data(self) -> Callable[[str], np.ndarray]: ...
