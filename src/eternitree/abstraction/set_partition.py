@@ -5,16 +5,17 @@
 
 from __future__ import annotations
 
-from typing import Any
-from typing import Callable
+from reprlib import Repr
 from typing import Iterable
 from typing import Self
+from typing import Sequence
 
 from .helpers import shift_dict
+from .object import CombinatorialObject
 from .partition import IntegerPartition
 
 
-class SetPartition:
+class SetPartition(CombinatorialObject):
     """
     A class for the manipulation of set partitions of integer sets.
 
@@ -24,7 +25,7 @@ class SetPartition:
     are themselves sorted according to their minimal element.
     """
 
-    def __init__(self, L: list[list[int]]):
+    def __init__(self, L: Sequence[Sequence[int]]):
         self.dict = {}
         S = [x for p in L for x in p]
         S.sort()
@@ -32,57 +33,40 @@ class SetPartition:
             raise ValueError("One of the parts is empty.")
         if any([S[i] == S[i + 1] for i in range(len(S) - 1)]):
             raise ValueError("The parts are not disjoint.")
-        M = L.copy()
+        M = list(list(p) for p in L)
         M.sort(key=lambda p: min(p))
         for k in range(len(L)):
             self.dict[k] = M[k]
             self.dict[k].sort()
 
-    def __repr__(self):
-        return f"Set partition {self.dict}"
+    def __repr__(self) -> str:
+        return f"Set partition {Repr(maxdict=10).repr(self.dict)}"
 
-    def __call__(self, k: int):
+    def __call__(self, k: int) -> list[int]:
         return self.dict[k]
 
-    def __eq__(self, other):
-        A = isinstance(other, SetPartition)
-        B = self.length == other.length
-        return A and B and all(self(k) == other(k) for k in range(self.length))
-
-    def __abs__(self):
+    def __abs__(self) -> int:
         return len(self.set)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(list(self.dict.keys()))
 
     @property
-    def convert(self) -> Callable[[str], Any]:
-        from .conversions import conversions
-
-        return lambda S: conversions[("set_partition", S)](self)
+    def is_standard(self) -> bool:
+        return self.set == list(range(1, self.size + 1))
 
     @property
-    def length(self) -> int:
-        """
-        The length of the set partition (number of parts).
-        """
-        return len(self)
+    def category(self) -> str:
+        return "set partition"
 
     @property
-    def set(self) -> list:
+    def set(self) -> list[int]:
         """
         The set underlying the set partition.
         """
         res = sum([self(k) for k in range(self.length)], [])
         res.sort()
         return res
-
-    @property
-    def size(self) -> int:
-        """
-        The size of the set partition (sum of the sizes of its parts).
-        """
-        return abs(self)
 
     @property
     def composition(self) -> list[int]:
@@ -93,7 +77,7 @@ class SetPartition:
         return [len(self(k)) for k in range(self.length)]
 
     @property
-    def type(self) -> IntegerPartition:
+    def partition(self) -> IntegerPartition:
         """
         The lengths of the parts of the set partition, reordered in
         a non-increasing sequence (integer partition.)

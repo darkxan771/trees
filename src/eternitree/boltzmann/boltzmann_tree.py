@@ -5,29 +5,7 @@ import numpy.random as rand
 from scipy.optimize import brentq
 from scipy.stats import poisson
 
-
-def generating_series_T(N: int) -> list[int]:
-    """
-    Computes the N first terms of the generating series of
-    rooted unlabelled trees.
-    """
-    divs = [[] for _ in range(N + 1)]
-    for i in range(1, N + 1):
-        for j in range(i, N + 1, i):
-            divs[j].append(i)
-    res = [0] * (N + 1)
-    res2 = [0] * (N + 1)
-    res[1] = 1
-    res2[1] = 1
-    for n in range(1, N):
-        res[n + 1] = sum([res[n - k] * res2[k + 1] for k in range(n)]) // n
-        res2[n + 1] = sum([d * res[d] for d in divs[n + 1]])
-    return res
-
-
-# T5000 = generating_series_T(5000)
-# should take around 7 seconds.
-
+from ..containers.generating_series import generating_series_T
 
 T353 = generating_series_T(353)
 T = T353[:350]

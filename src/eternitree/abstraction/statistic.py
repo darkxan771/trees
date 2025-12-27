@@ -36,7 +36,7 @@ class TreeStatistic:
         """
         The distribution of the tree statistic.
         """
-        n = self.tree.number_of_vertices
+        n = self.tree.size
         if self.with_weights:
             w = self.tree.weights / np.sum(self.tree.weights)
         else:

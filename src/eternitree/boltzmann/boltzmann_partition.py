@@ -7,23 +7,6 @@ from scipy.optimize import brentq
 from ..abstraction import IntegerPartition
 
 
-def generating_series_P(N: int) -> list[int]:
-    """
-    Computes the N first terms of the generating series of
-    integer partitions.
-    """
-    divs = [[] for _ in range(N + 1)]
-    for i in range(1, N + 1):
-        for j in range(i, N + 1, i):
-            divs[j].append(i)
-    res = [0] * (N + 1)
-    sigma = [sum(x, 0) for x in divs]
-    res[0] = 1
-    for n in range(1, N + 1):
-        res[n] = sum([sigma[n - k] * res[k] for k in range(n)]) // n
-    return res
-
-
 def expectation_size(x: float) -> float:
     """
     Computes the expected size of the random partition

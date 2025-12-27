@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Sequence
 from typing import Callable
 
 import numpy as np
@@ -21,27 +22,43 @@ class RootedTree(Tree):
     def __init__(self, subtrees: list = []):
         self.subtrees = list(subtrees)
         self.subtrees.sort(key=(lambda x: x.code), reverse=True)
-        self.size = 1 + sum([child.size for child in self.subtrees])
+        self.n = 1 + sum([child.n for child in self.subtrees])
         from ..abstraction.conversions import rooted_to_code
 
         self.code = rooted_to_code(self)
 
-    def __abs__(self):
-        return self.size
+    def __abs__(self) -> int:
+        return self.n
 
-    def __len__(self):
+    def __len__(self) -> int:
         if self.subtrees == []:
             return 0
         else:
             return 1 + max([child.height for child in self.subtrees])
+
+    @staticmethod
+    def from_nested_list(L: list) -> RootedTree:
+        """
+        Returns the rooted tree corresponding to the nested list.
+        """
+        return RootedTree([RootedTree.from_nested_list(k) for k in L])
+
+    @classmethod
+    def from_code(cls, L: Sequence[int]) -> RootedTree:
+        """
+        Returns the unique rooted tree with given level sequence.
+        """
+        from ..abstraction.conversions import code_to_nested_list
+
+        return cls.from_nested_list(code_to_nested_list(L))
 
     ##############
     # Properties #
     ##############
 
     @property
-    def type(self) -> str:
-        return "rooted"
+    def category(self) -> str:
+        return "rooted tree"
 
     @property
     def profile(self) -> np.ndarray:
@@ -65,15 +82,15 @@ class RootedTree(Tree):
 
     @property
     def data(self) -> Callable[[str], np.ndarray]:
-        return self.convert("recursive").data
+        return self.convert("recursive tree").data
 
     @property
     def d(self) -> int:
         """
         The number of increasing labellings of the tree.
         """
-        T = self.convert("recursive")
-        return int(factorial(self.size) / np.prod(T.size[: self.size]))
+        T = self.convert("recursive tree")
+        return int(factorial(self.size) / np.prod(T.n[: self.size]))
 
     @property
     def sym(self) -> int:

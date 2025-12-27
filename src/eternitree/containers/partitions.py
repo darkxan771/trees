@@ -1,14 +1,13 @@
 # Defines an IntegerPartitions container
 
-from itertools import chain
-from itertools import count
+from typing import Iterator
 
-from ..abstraction import InfiniteSetError
+from ..abstraction import CombinatorialClass
 from ..abstraction import IntegerPartition
-from ..boltzmann.boltzmann_partition import generating_series_P
+from .generating_series import generating_series_P
 
 
-class _IntegerPartitionsIterator_n:
+class _IntegerPartitionsIterator_n(Iterator):
     def __init__(self, n: int):
         self.a = [0] * (n + 1)
         self.k = 1
@@ -46,7 +45,7 @@ class _IntegerPartitionsIterator_n:
                 return res
 
 
-class IntegerPartitions:
+class IntegerPartitions(CombinatorialClass):
     """
     A container for integer partitions.
 
@@ -55,53 +54,21 @@ class IntegerPartitions:
     container.
     """
 
-    def __init__(self, n: None | int = None):
+    def __init__(self, n: int | None = None):
+        self.category = "partition"
         self.order = n
 
-    def __repr__(self):
-        if self.order is None:
-            return "Integer partitions"
-        else:
-            return f"Integer partitions with size {self.order}"
+    @classmethod
+    def generating_series(cls, N: int) -> list[int]:
+        return generating_series_P(N)
 
-    def __contains__(self, L: IntegerPartition):
-        A = isinstance(L, IntegerPartition)
-        if self.order is not None:
-            return A and L.size == self.order
-        else:
-            return A
+    @classmethod
+    def iter_n(cls):
+        return lambda n: _IntegerPartitionsIterator_n(n)
 
-    def __iter__(self):
-        if self.order is not None:
-            return _IntegerPartitionsIterator_n(self.order)
-        else:
-            return chain.from_iterable(
-                IntegerPartitions(n) for n in count(1)
-            ).__iter__()
-
-    @property
-    def cardinality(self) -> int:
-        """
-        Returns the cardinality of the set of integer partitions with
-        size n.
-
-        The cardinality satisfies the recurrence relation:
-
-        P[n]
-        = 1/n sum([d * P[n-k] for k in 1..n and for d | k]).
-        """
-        if self.order is None:
-            raise InfiniteSetError("Infinite set")
-        else:
-            return int(generating_series_P(self.order)[-1])
-
-    def example(self) -> IntegerPartition:
+    @staticmethod
+    def example() -> IntegerPartition:
         """
         An example of integer partition.
         """
-        if self.order is None:
-            return IntegerPartition([5, 3, 2, 2, 1, 1, 1])
-        else:
-            from ..random.random_partitions import UniformPartition
-
-            return UniformPartition(self.order).get_random_element()
+        return IntegerPartition([5, 3, 2, 2, 1, 1, 1])

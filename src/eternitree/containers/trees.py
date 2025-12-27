@@ -1,27 +1,24 @@
-# Defines the RootedTrees and RecursiveTrees containers
-# DoubleRecursiveTrees is a particular instance of RecursiveTrees
+# Defines the RootedTrees, RecursiveTrees and
+# DoubleRecursiveTrees containers
 
-from collections.abc import Sequence
-from itertools import chain
-from itertools import count
+from typing import Callable
+from typing import Iterator
 
 import numpy as np
-from scipy.special import factorial
 
-from ..abstraction import InfiniteSetError
-from ..abstraction import Tree
-from ..abstraction.conversions import code_to_nested_list
-from ..abstraction.conversions import permutation_to_code
-from ..boltzmann.boltzmann_tree import generating_series_T
+from ..abstraction import CombinatorialClass
 from ..recursive import RecursiveTree
 from ..rooted import RootedTree
+from .generating_series import generating_series_DRT
+from .generating_series import generating_series_RT
+from .generating_series import generating_series_T
 
 #############
 # Iterators #
 #############
 
 
-class _RecursiveTreesIterator_n:
+class _RecursiveTreesIterator_n(Iterator):
     def __init__(self, n: int):
         self.order = n
         self.current = np.zeros(n - 1, dtype=int)
@@ -33,7 +30,7 @@ class _RecursiveTreesIterator_n:
     def __next__(self):
         if self.finished:
             raise StopIteration
-        res = RecursiveTrees().from_code(self.current.tolist())
+        res = RecursiveTree.from_code(self.current.tolist())
         test = np.argwhere(self.current < np.arange(self.order - 1))
         if test.size == 0:
             self.finished = True
@@ -44,7 +41,7 @@ class _RecursiveTreesIterator_n:
         return res
 
 
-class _DoubleRecursiveTreesIterator_n:
+class _DoubleRecursiveTreesIterator_n(Iterator):
     def __init__(self, n: int):
         self.order = n
         self.current = np.ones((2, n - 1), dtype=int)
@@ -57,7 +54,7 @@ class _DoubleRecursiveTreesIterator_n:
         if self.finished:
             raise StopIteration
         n = self.order
-        res = RecursiveTrees().from_KP_insertion_array(self.current)
+        res = RecursiveTree.from_KP_insertion_array(self.current)
         test_i = np.argwhere(self.current[0, :] < np.arange(1, n))
         test_j = np.argwhere(self.current[1, :] < self.current[0, :])
         if test_j.size == 0:
@@ -75,7 +72,7 @@ class _DoubleRecursiveTreesIterator_n:
         return res
 
 
-class _RootedTreesIterator_n:
+class _RootedTreesIterator_n(Iterator):
     def __init__(self, n: int):
         self.order = n
         self.current = np.arange(n)
@@ -87,7 +84,7 @@ class _RootedTreesIterator_n:
     def __next__(self):
         if self.finished:
             raise StopIteration
-        res = RootedTrees().from_code(self.current.tolist())
+        res = RootedTree.from_code(self.current.tolist())
         if sum(self.current) == self.order - 1:
             self.finished = True
         else:
@@ -103,128 +100,79 @@ class _RootedTreesIterator_n:
 ##############
 
 
-class RecursiveTrees:
+class RecursiveTrees(CombinatorialClass):
     """
-    A container for recursive trees or double recursive trees.
+    A container for recursive trees.
 
     If a size n is given, the container is restricted to recursive
     trees with size n. In any case, one can iterate upon the container.
     """
 
-    def __init__(self, n: None | int = None, double: bool = False):
+    def __init__(self, n: int | None = None):
+        self.category = "recursive tree"
         self.order = n
-        self.double = double
 
-    def __repr__(self):
-        double = ""
-        if self.double:
-            double = "Double "
-        if self.order is None:
-            return f"{double}Recursive trees"
-        else:
-            return f"{double}Recursive trees with size {self.order}"
+    @classmethod
+    def iter_n(cls) -> Callable[[int], Iterator]:
+        return lambda n: _RecursiveTreesIterator_n(n)
 
-    def __contains__(self, T):
-        A = isinstance(T, RecursiveTree)
-        B, C = True, True
-        if self.order is not None:
-            B = self.order == T.size[0]
-        if self.double:
-            C = T.is_double_recursive()
-        return A and B and C
+    @classmethod
+    def generating_series(cls, N: int) -> list[int]:
+        return generating_series_RT(N)
 
-    def __iter__(self):
-        if self.order is not None:
-            if self.double:
-                return _DoubleRecursiveTreesIterator_n(self.order)
-            else:
-                return _RecursiveTreesIterator_n(self.order)
-        else:
-            return chain.from_iterable(
-                RecursiveTrees(n, self.double) for n in count(1)
-            ).__iter__()
-
-    @property
-    def cardinality(self) -> int:
-        """
-        The cardinality of the set of (double) recursive trees.
-        """
-        n = self.order
-        if n is None:
-            raise InfiniteSetError("Infinite set")
-        if self.double:
-            L = np.arange(1, n)
-            return int(np.prod(L * (L + 1)) / 2 ** (n - 1))
-        else:
-            return factorial(n - 1, True)
-
-    def example(self) -> Tree:
+    @staticmethod
+    def example() -> RecursiveTree:
         """
         An example of recursive tree.
         """
-        if self.order is None:
-            code = (0, 0, 0, 0, 1, 1, 0, 4, 2, 1, 6, 1, 3, 4)
-            T = RecursiveTree()
-            for i in code:
-                _ = T.add_node(i)
-            return T
-        else:
-            from ..random.random_trees import UniformRecursiveTree
-
-            return UniformRecursiveTree(self.order).get_random_element()
-
-    def from_permutation(self, p: Sequence[int]) -> RecursiveTree:
-        """
-        Constructs the unique recursive tree corresponding to
-        the permutation p.
-        """
-        if self.order is not None and (not len(p) == self.order - 1):
-            raise ValueError(
-                "p does not have the correct size for the container."
-            )
-        v = np.array(p)
-        v.sort()
-        if not np.all(v == np.arange(len(v))):
-            raise ValueError("The parameter p is not a permutation")
-        return self.from_code(permutation_to_code(np.array(p)).tolist())
-
-    def from_code(self, c: Sequence[int]) -> RecursiveTree:
-        """
-        Constructs the unique recursive tree corresponding to
-        the code c.
-        """
-        if self.order is None:
-            res = RecursiveTree()
-        else:
-            if not len(c) + 1 == self.order:
-                raise ValueError(
-                    "c does not have the correct size for the container."
-                )
-            res = RecursiveTree(max_size=len(c) + 1)
-        res.weight[0] = len(c) + 1
-        for k in range(len(c)):
-            _ = res.add_node(c[k], new_weight=len(c) - k)
-        return res
-
-    def from_KP_insertion_array(self, L: np.ndarray) -> RecursiveTree:
-        """
-        Constructs the unique double recursive tree corresponding to
-        the insertion array L.
-
-        Each column of L is a pair (i, J) corresponding to the insertion
-        of a new node with weight J above the node with weight i.
-        """
-        if self.order is not None and (not L.shape == (2, self.order - 1)):
-            raise ValueError(
-                "The insertion array does not have the right size."
-            )
-        T = RecursiveTree(max_size=L.shape[1] + 1)
-        for v in L.transpose()[:,]:
-            _ = T.KP_insertion_at_weight(v[0], v[1])
+        code = (0, 0, 0, 0, 1, 1, 0, 4, 2, 1, 6, 1, 3, 4)
+        T = RecursiveTree()
+        for i in code:
+            _ = T.add_node(i)
         return T
 
 
-class RootedTrees:
+class DoubleRecursiveTrees(CombinatorialClass):
+    """
+    A container for double recursive trees.
+
+    If a size n is given, the container is restricted to double recursive
+    trees with size n. In any case, one can iterate upon the container.
+    """
+
+    def __init__(self, n: int | None = None):
+        self.category = "recursive tree"
+        self.order = n
+
+    def __repr__(self) -> str:
+        return "Double " + super().__repr__().lower()
+
+    def __contains__(self, obj) -> bool:
+        A = super().__contains__(obj)
+        return A and obj.is_double_recursive()
+
+    @classmethod
+    def iter_n(cls) -> Callable[[int], Iterator]:
+        return lambda n: _DoubleRecursiveTreesIterator_n(n)
+
+    @classmethod
+    def generating_series(cls, N: int) -> list[int]:
+        return generating_series_DRT(N)
+
+    @staticmethod
+    def example() -> RecursiveTree:
+        """
+        An example of double recursive tree.
+        """
+        code = (0, 0, 0, 0, 1, 1, 0, 4, 2, 1, 6, 1, 3, 4)
+        T = RecursiveTree()
+        T.weight[0] = 15
+        for k, i in enumerate(code):
+            _ = T.add_node(i, new_weight=14 - k)
+        return T
+
+
+class RootedTrees(CombinatorialClass):
     """
     A container for rooted (unlabelled) trees.
 
@@ -233,67 +181,21 @@ class RootedTrees:
     """
 
     def __init__(self, n: None | int = None):
+        self.category = "rooted tree"
         self.order = n
 
-    def __repr__(self):
-        if self.order is None:
-            return str("Rooted trees")
-        else:
-            return f"Rooted trees with size {self.order}"
+    @classmethod
+    def iter_n(cls) -> Callable[[int], Iterator]:
+        return lambda n: _RootedTreesIterator_n(n)
 
-    def __contains__(self, T):
-        A = isinstance(T, RootedTree)
-        if self.order is None:
-            return A
-        else:
-            return A and (T.size == self.order)
+    @classmethod
+    def generating_series(cls, N: int) -> list[int]:
+        return generating_series_T(N)
 
-    def __iter__(self):
-        if self.order is not None:
-            return _RootedTreesIterator_n(self.order)
-        else:
-            return chain.from_iterable(
-                RootedTrees(n) for n in count(1)
-            ).__iter__()
-
-    @property
-    def cardinality(self) -> int:
-        """
-        Returns the cardinality of the set of rooted trees with
-        size n (the program raises an error if the set of all rooted
-        trees is considered).
-
-        The cardinality satisfies the recurrence relation:
-
-        T[n+1]
-        = 1/n sum([d * T[d] * T[n-k+1] for k in 1..n and for d | k]).
-        """
-
-        if self.order is None:
-            raise InfiniteSetError("Infinite set")
-        else:
-            return int(generating_series_T(self.order)[-1])
-
-    def example(self) -> Tree:
+    @staticmethod
+    def example() -> RootedTree:
         """
         An example of rooted tree.
         """
-        if self.order is None:
-            nested = [[[[[[[[]], []], [], []], [[]], []], []]]]
-            return self.from_nested_list(nested)
-        else:
-            from ..random.random_trees import UniformRootedTree
-
-            return UniformRootedTree(self.order).get_random_element()
-
-    def from_code(self, L: Sequence[int]) -> RootedTree:
-        """
-        Returns the unique rooted tree with given level sequence.
-        """
-        return self.from_nested_list(code_to_nested_list(L))
-
-    def from_nested_list(self, L: list) -> RootedTree:
-        """
-        Returns the rooted tree corresponding to the nested list.
-        """
-        return RootedTree([RootedTrees().from_nested_list(k) for k in L])
+        nested = [[[[[[[[]], []], [], []], [[]], []], []]]]
+        return RootedTree.from_nested_list(nested)

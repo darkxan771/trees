@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Callable
 from typing import Self
 
@@ -16,8 +17,8 @@ compute_data: dict[str, Callable] = {
     "degree": lambda T: np.vectorize(lambda L: len(L))(
         np.array(T.children, dtype=object)
     ),
-    "depth": lambda T: T.depth[: T.number_of_vertices],
-    "size": lambda T: T.size[: T.number_of_vertices],
+    "depth": lambda T: T.depth[: T.size],
+    "size": lambda T: T.n[: T.size],
 }
 
 
@@ -34,8 +35,8 @@ class RecursiveTree(Tree):
       by convention, T.parent[0] = -1).
     - T.weight[i] contains a positive integer, the weight of the node i.
       This is used in particular when grafting new nodes randomly to T.
-    - T.size[i] is the size of the subtree based at i. In particular,
-      T.size[0] = n.
+    - T.n[i] is the size of the subtree based at i. In particular,
+      T.n[0] = n.
     - T.depth[i] is the depth of the node i (distance to the root). In
       particular, T.depth[0] = 0.
 
@@ -47,18 +48,18 @@ class RecursiveTree(Tree):
         self.parent = -np.ones(max_size, dtype=int)
         self.weight = np.zeros(max_size, dtype=int)
         self.weight[0] = 1
-        self.size = np.zeros(max_size, dtype=int)
-        self.size[0] = 1
+        self.n = np.zeros(max_size, dtype=int)
+        self.n[0] = 1
         self.depth = -np.ones(max_size, dtype=int)
         self.depth[0] = 0
         self.limit = max_size
         self.birth_times: dict[int, float] = {}
         self.birth_processes: dict = {}
 
-    def __abs__(self):
-        return int(self.size[0])
+    def __abs__(self) -> int:
+        return int(self.n[0])
 
-    def __len__(self):
+    def __len__(self) -> int:
         return int(np.max(self.depth))
 
     def copy(self, new_size: int | None = None) -> RecursiveTree:
@@ -85,13 +86,53 @@ class RecursiveTree(Tree):
                 _ = R.birth_processes.pop(k, None)
         return R
 
+    @staticmethod
+    def from_code(c: Sequence[int]) -> RecursiveTree:
+        """
+        Constructs the unique recursive tree corresponding to
+        the code c.
+        """
+        res = RecursiveTree()
+        res.weight[0] = len(c) + 1
+        for k in range(len(c)):
+            _ = res.add_node(c[k], new_weight=len(c) - k)
+        return res
+
+    @classmethod
+    def from_permutation(cls, p: Sequence[int]) -> RecursiveTree:
+        """
+        Constructs the unique recursive tree corresponding to
+        the permutation p.
+        """
+        from ..abstraction.conversions import permutation_to_code
+
+        v = np.array(p)
+        v.sort()
+        if not np.all(v == np.arange(len(v))):
+            raise ValueError("The parameter p is not a permutation")
+        return cls.from_code(permutation_to_code(np.array(p)).tolist())
+
+    @staticmethod
+    def from_KP_insertion_array(L: np.ndarray) -> RecursiveTree:
+        """
+        Constructs the unique double recursive tree corresponding to
+        the insertion array L.
+
+        Each column of L is a pair (i, J) corresponding to the insertion
+        of a new node with weight J above the node with weight i.
+        """
+        T = RecursiveTree(max_size=L.shape[1] + 1)
+        for v in L.transpose()[:,]:
+            _ = T.KP_insertion_at_weight(v[0], v[1])
+        return T
+
     ##############
     # Properties #
     ##############
 
     @property
-    def type(self) -> str:
-        return "recursive"
+    def category(self) -> str:
+        return "recursive tree"
 
     @property
     def profile(self) -> np.ndarray:
@@ -107,7 +148,7 @@ class RecursiveTree(Tree):
         """
         Returns the list of the children of the node k.
         """
-        n = self.number_of_vertices
+        n = self.size
         return [x for x in range(k + 1, n) if self.parent[x] == k]
 
     @property
@@ -115,7 +156,7 @@ class RecursiveTree(Tree):
         """
         A list of lists of the children of each node of the tree.
         """
-        n = self.number_of_vertices
+        n = self.size
         return [self.children_of_node(k) for k in range(n)]
 
     @property
@@ -125,7 +166,7 @@ class RecursiveTree(Tree):
         sizes of the subtrees attached to the root.
         """
         children = np.array(self.children_of_node(0))
-        res = self.size[children].tolist()
+        res = self.n[children].tolist()
         res.sort(reverse=True)
         return IntegerPartition(res)
 
@@ -134,7 +175,7 @@ class RecursiveTree(Tree):
         """
         The weights of the nodes of the recursive tree.
         """
-        return self.weight[: self.number_of_vertices]
+        return self.weight[: self.size]
 
     @property
     def data(self) -> Callable[[str], np.ndarray]:
@@ -146,7 +187,7 @@ class RecursiveTree(Tree):
         The row positions of the nodes.
         """
         children = self.children
-        res = np.zeros(self.number_of_vertices, dtype=int)
+        res = np.zeros(self.size, dtype=int)
         h = self.height
         count = np.zeros(h, dtype=int)
         level = [0]
@@ -166,7 +207,7 @@ class RecursiveTree(Tree):
         then the longest path is the one with the largest label of final leaf.
         """
         h = self.height
-        n = self.number_of_vertices
+        n = self.size
         candidates = [k for k in range(n) if self.depth[k] == h]
         final = max(candidates)
         return self.path_to_root(final)
@@ -182,7 +223,7 @@ class RecursiveTree(Tree):
         """
         Returns the set of indices in the subtree based at k.
         """
-        n = self.number_of_vertices
+        n = self.size
         L = [k]
         to_be_computed = [k]
         while len(to_be_computed) > 0:
@@ -199,11 +240,11 @@ class RecursiveTree(Tree):
         subtree greater than epsilon, and such that all the ancestors
         have the same property.
         """
-        n = self.number_of_vertices
+        n = self.size
         res = [
             k
             for k in range(n)
-            if k == 0 or self.size[k] >= epsilon * self.size[self.parent[k]]
+            if k == 0 or self.n[k] >= epsilon * self.n[self.parent[k]]
         ]
         return [k for k in res if all([l in res for l in self.path_to_root(k)])]
 
@@ -223,7 +264,7 @@ class RecursiveTree(Tree):
         its set of weights is [1, n] and the weights are
         decreasing.
         """
-        n = self.number_of_vertices
+        n = self.size
         if np.all(np.sort(self.weight[:n]) == np.arange(1, n + 1)):
             return bool(
                 np.all(self.weight[self.parent[1:n]] > self.weight[1:n])
@@ -239,7 +280,7 @@ class RecursiveTree(Tree):
         """
         Maps a function on the set of weights.
         """
-        n = self.number_of_vertices
+        n = self.size
         self.weight[:n] = np.vectorize(func)(self.weight[:n])
         return self
 
@@ -247,7 +288,7 @@ class RecursiveTree(Tree):
         """
         Removes all nodes after the k-th one.
         """
-        if k <= self.number_of_vertices:
+        if k <= self.size:
             return self.copy(k)
         else:
             raise ValueError("One cannot resize the tree to a larger size.")
@@ -294,7 +335,7 @@ class RecursiveTree(Tree):
         from .transformations import tree_cut
 
         trim_indices = self.trim_indices(epsilon)
-        n = self.number_of_vertices
+        n = self.size
         to_cut = [k for k in range(n) if not (k in trim_indices)]
         return tree_cut(self, to_cut)
 
@@ -361,7 +402,7 @@ class RecursiveTree(Tree):
         can be chosen uniformly, or with probability proportional to the
         weight w[i].
         """
-        n = self.number_of_vertices
+        n = self.size
         if with_weights:
             return rand.choice(n, p=self.weight[:n] / sum(self.weight[:n]))
         else:
@@ -393,7 +434,7 @@ class RecursiveTree(Tree):
         a subtree.
         """
         if subtree == []:
-            Ind = list(range(self.number_of_vertices))
+            Ind = list(range(self.size))
         else:
             Ind = subtree
         L = [k for k in self.subtree_indices(rand.choice(Ind)) if k in Ind]
@@ -408,7 +449,7 @@ class RecursiveTree(Tree):
         among all the possible increasing labellings of the underlying
         rooted tree.
         """
-        n = self.number_of_vertices
+        n = self.size
         d = np.zeros(n, dtype=int)
         dinv = np.zeros(n, dtype=int)
         Ind = list(range(n))
@@ -418,8 +459,8 @@ class RecursiveTree(Tree):
             d[n - 1] = k
             dinv[k] = n - 1
             n -= 1
-        n = self.number_of_vertices
+        n = self.size
         self.parent[1:n] = dinv[self.parent[d[1:n]]]
         self.weight[:n] = self.weight[d]
-        self.size[:n] = self.size[d]
+        self.n[:n] = self.n[d]
         self.depth[:n] = self.depth[d]

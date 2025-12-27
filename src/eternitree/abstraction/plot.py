@@ -22,7 +22,7 @@ from .tree import Tree
 
 
 def angles(T: RecursiveTree) -> np.ndarray:
-    n = T.number_of_vertices
+    n = T.size
     C = T.children
     angle_min = np.zeros(n, dtype=float)
     angle_max = np.zeros(n, dtype=float)
@@ -30,9 +30,9 @@ def angles(T: RecursiveTree) -> np.ndarray:
     for i in range(1, n):
         p = T.parent[i]
         j = list(C[p]).index(i)
-        denom = T.size[p] - 1
-        tmin = sum(T.size[k] for k in C[p][:j]) / denom
-        tmax = sum(T.size[k] for k in C[p][: j + 1]) / denom
+        denom = T.n[p] - 1
+        tmin = sum(T.n[k] for k in C[p][:j]) / denom
+        tmax = sum(T.n[k] for k in C[p][: j + 1]) / denom
         if p == 0:
             angle_min[i] = tmin * 2 * np.pi
             angle_max[i] = tmax * 2 * np.pi
@@ -44,7 +44,7 @@ def angles(T: RecursiveTree) -> np.ndarray:
 
 
 def radii(T: RecursiveTree, style: str = "circular") -> np.ndarray:
-    D = T.depth[: T.number_of_vertices]
+    D = T.depth[: T.size]
     if style == "log-circular":
         return np.log(1 + D)
     else:
@@ -57,13 +57,13 @@ def compute_centered(T: RecursiveTree) -> dict:
     rpos = T.row_positions
     return {
         i: np.array([-(prof[D[i]] + 1) / 2 + rpos[i], D[i]])
-        for i in range(T.size[0])
+        for i in range(T.size)
     }
 
 
 def compute_left_aligned(T: RecursiveTree) -> dict:
     rpos = T.row_positions
-    return {i: np.array([rpos[i], T.depth[i]]) for i in range(T.size[0])}
+    return {i: np.array([rpos[i], T.depth[i]]) for i in range(T.size)}
 
 
 def compute_circular(
@@ -71,7 +71,7 @@ def compute_circular(
 ) -> dict:
     return {
         i: np.array([rad[i] * np.cos(ang[i]), rad[i] * np.sin(ang[i])])
-        for i in range(T.size[0])
+        for i in range(T.size)
     }
 
 
@@ -98,19 +98,19 @@ compute_layouts: dict[str, Callable] = {
 
 
 def labels_simple(T: RecursiveTree) -> dict:
-    return {i: str(i) for i in range(T.size[0])}
+    return {i: str(i) for i in range(T.size)}
 
 
 def labels_double(T: RecursiveTree) -> dict:
     L = labels_simple(T)
-    for i in range(T.size[0]):
-        L[i] += "|" + str(int(T.size[0] - T.weight[i]))
+    for i in range(T.size):
+        L[i] += "|" + str(int(T.size - T.weight[i]))
     return L
 
 
 def labels_with_weights(T: RecursiveTree) -> dict:
     L = labels_simple(T)
-    for i in range(T.size[0]):
+    for i in range(T.size):
         L[i] += ":" + str(int(T.weight[i]))
     return L
 
@@ -134,7 +134,7 @@ class ComputeColors:
     def __call__(
         self, T: RecursiveTree, G: GraphicOptions
     ) -> tuple[list, list]:
-        n = T.number_of_vertices
+        n = T.size
         E = T.convert("networkx").edges
         f = colors_dict[self.opt](T, G)
         return [f(k) for k in range(n)], [f(e[1]) for e in E]
@@ -144,7 +144,7 @@ def colors_age(
     T: RecursiveTree, _: GraphicOptions
 ) -> Callable[[int], np.ndarray]:
     birth = np.array(list(T.birth_times.values()))
-    bs = standardisation(birth) / T.number_of_vertices
+    bs = standardisation(birth) / T.size
     return lambda x: (1 - bs[x]) * color_start + bs[x] * color_end
 
 
@@ -243,9 +243,9 @@ class GraphicOptions:
 
 def draw_tree_on_ax(T: Tree, ax0: Axes, **options) -> None:
     G = GraphicOptions(options)
-    if T.type == "rooted":
+    if T.category == "rooted tree":
         G.labels = "empty"
-    RT = T.convert("recursive")
+    RT = T.convert("recursive tree")
     Tn = T.convert("networkx")
     ax0.set_axis_off()
     if G.with_levels:

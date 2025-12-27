@@ -16,6 +16,7 @@ from eternitree.random import UniformPartition
 from eternitree.random import UniformRecursiveTree
 from eternitree.random import UniformRootedTree
 from eternitree.recursive import RecursiveTree
+from eternitree.rooted import RootedTree
 
 
 def test_recursive(verbose=True):
@@ -28,7 +29,7 @@ def test_recursive(verbose=True):
 
     assert T.convert("code") == code
     assert T.convert("permutation") == permutation
-    assert T.convert("rooted").convert("nested_list") == L
+    assert T.convert("rooted tree").convert("nested list") == L
     assert T.number_of_edges == 14
     assert T.number_of_vertices == 15
     assert T.height == 3
@@ -91,9 +92,9 @@ def test_recursive(verbose=True):
         _ = C.add_node(k)
     assert T.cut(T.subtree_indices(4)) == C
 
-    T2 = RecursiveTrees().example()
+    T2 = RecursiveTrees.example()
     assert T2 == T
-    T2.convert("recursive").insert_node(10, 2)
+    T2.convert("recursive tree").insert_node(10, 2)
     assert T2.convert("code") == (0, 0, 0, 0, 1, 1, 0, 4, 2, 2, 1, 6, 1, 3, 4)
 
     T.weight = np.array([15, 13, 14, 6, 5, 9, 12, 11, 2, 8, 7, 10, 3, 1, 4])
@@ -104,14 +105,14 @@ def test_recursive(verbose=True):
             [1, 2, 1, 1, 3, 4, 4, 1, 4, 4, 7, 2, 1, 4],
         ]
     )
-    assert np.all(T.convert("KP_insertion_array") == KP)
+    assert np.all(T.convert("KP insertion array") == KP)
 
     Rec = RecursiveTrees(15)
     assert T in Rec
     assert Rec.cardinality == 87178291200
-    assert Rec.from_permutation(permutation) == T
-    assert Rec.from_code(code) == T
-    assert Rec.from_KP_insertion_array(KP) == T
+    assert RecursiveTree.from_permutation(permutation) == T
+    assert RecursiveTree.from_code(code) == T
+    assert RecursiveTree.from_KP_insertion_array(KP) == T
 
     if verbose:
         print("\n", "Done !")
@@ -123,10 +124,10 @@ def test_rooted(verbose=True):
     Root = RootedTrees(15)
     code = (0, 1, 2, 3, 4, 5, 6, 7, 6, 5, 5, 4, 5, 4, 3)
     nested = [[[[[[[[]], []], [], []], [[]], []], []]]]
-    T = RootedTrees(15).from_nested_list(nested)
+    T = RootedTree.from_nested_list(nested)
 
     assert T.convert("code") == code
-    assert T.convert("nested_list") == nested
+    assert T.convert("nested list") == nested
     assert T.number_of_edges == 14
     assert T.number_of_vertices == 15
     assert T.height == 7
@@ -135,7 +136,7 @@ def test_rooted(verbose=True):
     assert T.d == 388800
     assert T.u == 194400
     assert T.sym == 2
-    assert Root.from_code(code) == T
+    assert RootedTree.from_code(code) == T
     assert Root.cardinality == 87811
 
     if verbose:

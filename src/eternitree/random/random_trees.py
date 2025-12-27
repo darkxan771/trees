@@ -90,13 +90,13 @@ class DeterministicRecursiveTree(RandomRecursiveTree):
     """
 
     def __init__(self, T: RecursiveTree):
-        self.size = T.number_of_vertices
+        self.size = T.size
         self.object = "recursive tree"
         self.name = "deterministic"
         self.parameter = T
 
     def __repr__(self):
-        return self.parameter.__repr__()
+        return repr(self.parameter)
 
     @property
     def label(self):

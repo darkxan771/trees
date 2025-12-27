@@ -1,35 +1,26 @@
 # Defines the abstract Tree class
 
-from typing import Any
 from typing import Callable
-from typing import Protocol
 
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from matplotlib.axes._axes import Axes
 
+from .object import CombinatorialObject
 from .partition import IntegerPartition
 
 sns.set_theme()
 
 
-class Tree(Protocol):
-
-    def __repr__(self):
-        return f"{self.type.capitalize()} tree of size {abs(self)}"
+class Tree(CombinatorialObject):
 
     def __abs__(self) -> int: ...
 
     def __len__(self) -> int: ...
 
-    def __eq__(self, other):
-        A = isinstance(other, self.__class__)
-        B = self.convert("code") == other.convert("code")
-        return A and B
-
     @property
-    def type(self) -> str: ...
+    def category(self) -> str: ...
 
     @property
     def number_of_vertices(self) -> int:
@@ -40,7 +31,7 @@ class Tree(Protocol):
 
     @property
     def number_of_edges(self) -> int:
-        return self.number_of_vertices - 1
+        return abs(self) - 1
 
     @property
     def height(self) -> int:
@@ -61,18 +52,12 @@ class Tree(Protocol):
         The integer partition with size n-1 corresponding to the
         sizes of the subtrees attached to the root.
         """
-        res = [T.number_of_vertices for T in self.subtree_list]
+        res = [T.size for T in self.subtree_list]
         res.sort(reverse=True)
         return IntegerPartition(res)
 
     @property
     def weights(self) -> np.ndarray: ...
-
-    @property
-    def convert(self) -> Callable[[str], Any]:
-        from .conversions import conversions
-
-        return lambda S: conversions[(self.type, S)](self)
 
     @property
     def data(self) -> Callable[[str], np.ndarray]: ...

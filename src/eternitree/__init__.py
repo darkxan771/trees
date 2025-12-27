@@ -1,6 +1,7 @@
 from .abstraction import IntegerPartition
 from .abstraction import SetPartition
 from .abstraction.plot import graphic_options
+from .containers import DoubleRecursiveTrees
 from .containers import IntegerPartitions
 from .containers import RecursiveTrees
 from .containers import RootedTrees
@@ -27,6 +28,7 @@ from .rooted import RootedTree
 
 __all__ = [
     "CrumpJagersModeProcess",
+    "DoubleRecursiveTrees",
     "EwensPartition",
     "EwensSetPartition",
     "EwensRecursiveTree",

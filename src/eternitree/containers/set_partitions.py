@@ -1,24 +1,18 @@
 # Defines a SetPartitions container
 
+from reprlib import Repr
+from typing import Callable
+from typing import Iterator
+from typing import Sequence
+
 import numpy as np
 
-from ..abstraction.set_partition import SetPartition
+from ..abstraction import CombinatorialClass
+from ..abstraction import SetPartition
+from .generating_series import generating_series_SP
 
 
-def bell_number(n):
-    k = 1
-    row = np.array([1])
-    while k < n:
-        new_row = np.zeros(k + 1, dtype=int)
-        new_row[0] = row[-1]
-        for i in range(1, k + 1):
-            new_row[i] = row[i - 1] + new_row[i - 1]
-        row = new_row
-        k += 1
-    return int(row[-1])
-
-
-class _SetPartitionsIterator_n:
+class _SetPartitionsIterator_n(Iterator):
     def __init__(self, L: list[int]):
         self.set = L.copy()
         self.set.sort()
@@ -56,42 +50,55 @@ class _SetPartitionsIterator_n:
         return SetPartition(res)
 
 
-class SetPartitions:
+class SetPartitions(CombinatorialClass):
     """
     A container for set partitions of a given finite set of integers.
     """
 
-    def __init__(self, L: list[int]):
-        self.set = L.copy()
-        self.set.sort()
+    def __init__(self, L: int | Sequence[int] | None = None):
+        if L is None:
+            self.order = None
+            self.is_standard = True
+        elif isinstance(L, int):
+            self.set = list(range(1, L + 1))
+            self.order = L
+            self.is_standard = True
+        else:
+            self.set = list(L)
+            self.set.sort()
+            self.order = len(self.set)
+            self.is_standard = self.set == list(range(1, self.order + 1))
+        self.category = "set partition"
 
-    def __repr__(self):
-        return f"Set partitions of {self.set}"
+    @classmethod
+    def generating_series(cls, N: int) -> list[int]:
+        return generating_series_SP(N)
 
-    def __contains__(self, SP: SetPartition):
-        return isinstance(SP, SetPartition) and SP.set == self.set
+    @classmethod
+    def iter_n(cls) -> Callable[[int], Iterator]:
+        return lambda n: _SetPartitionsIterator_n(list(range(1, n + 1)))
 
-    def __iter__(self):
-        return _SetPartitionsIterator_n(self.set)
+    def __iter__(self) -> Iterator:
+        if self.is_standard:
+            return super().__iter__()
+        else:
+            return _SetPartitionsIterator_n(self.set)
 
-    @property
-    def order(self):
-        """
-        The size of the set underlying the set partitions.
-        """
-        return len(self.set)
+    def __repr__(self) -> str:
+        if self.is_standard:
+            return super().__repr__()
+        else:
+            return f"Set partitions of {Repr(maxlist=10).repr(self.set)}"
 
-    @property
-    def cardinality(self) -> int:
-        """
-        The cardinality of the set of set partitions.
-        """
-        return bell_number(self.order)
+    def __contains__(self, SP) -> bool:
+        if self.is_standard:
+            return SP.is_standard and super().__contains__(SP)
+        else:
+            return SP.set == self.set
 
-    def example(self) -> SetPartition:
+    @staticmethod
+    def example() -> SetPartition:
         """
         An example of set partition.
         """
-        from ..random.random_partitions import UniformSetPartition
-
-        return UniformSetPartition(self.set).get_random_element()
+        return SetPartition([[1, 3, 5, 6], [2, 9], [4, 8, 11], [10], [7, 12]])

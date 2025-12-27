@@ -10,7 +10,7 @@ from ..abstraction import SetPartition
 from ..containers import IntegerPartitions
 from ..containers import RecursiveTrees
 from ..containers import RootedTrees
-from ..containers.set_partitions import bell_number
+from ..containers.generating_series import generating_series_SP
 from ..recursive import RecursiveTree
 
 
@@ -31,7 +31,7 @@ def probability_sp_ewens(P: SetPartition, theta: float) -> float:
     parameter theta.
     """
     n = P.size
-    m = P.type.dictionary
+    m = P.partition.dictionary
     res = theta**P.length / np.prod(theta + np.arange(n))
     for i in m.keys():
         res *= factorial(i - 1, exact=True) ** m[i]
@@ -43,8 +43,8 @@ def probability_tree_plancherel(T: RecursiveTree) -> float:
     Returns the probability of the recursive or rooted tree T under
     the Plancherel distribution (beware that the result is not the same).
     """
-    n = T.number_of_vertices
-    num = int(factorial(n) / np.prod(T.size[:n]))
+    n = T.size
+    num = int(factorial(n) / np.prod(T.n[:n]))
     denum = np.prod(np.array([(i * (i + 1) / 2) for i in range(1, n)]))
     return float(num / denum)
 
@@ -56,7 +56,7 @@ def probability_tree_weighted(
     Returns the probability of the recursive tree T under the
     weighted distribution.
     """
-    n = T.number_of_vertices
+    n = T.size
     W = np.vectorize(weight_function)
     num = np.prod(W(T.parent[np.arange(1, n)]))
     denom = np.prod(np.cumsum(W(np.arange(n - 1))))
@@ -68,7 +68,7 @@ def probability_tree_ewens(T: RecursiveTree, theta: float) -> float:
     Returns the probability of the recursive tree T under
     the Ewens distribution with parameter theta.
     """
-    if T.number_of_vertices == 1:
+    if T.size == 1:
         return float(1)
     else:
         A = float(
@@ -79,7 +79,9 @@ def probability_tree_ewens(T: RecursiveTree, theta: float) -> float:
 
 
 compute_probabilities: dict[tuple[str, str], Callable] = {
-    ("set partition", "uniform"): lambda P, _: float(1 / bell_number(P.size)),
+    ("set partition", "uniform"): lambda P, _: float(
+        1 / generating_series_SP(P.size)[-1]
+    ),
     ("set partition", "ewens"): probability_sp_ewens,
     ("partition", "uniform"): lambda L, _: float(
         1 / IntegerPartitions(L.size).cardinality
@@ -89,11 +91,11 @@ compute_probabilities: dict[tuple[str, str], Callable] = {
         L.dimension**2 / factorial(L.size, exact=True)
     ),
     ("rooted tree", "uniform"): lambda T, _: float(
-        1 / RootedTrees(T.number_of_vertices).cardinality
+        1 / RootedTrees(T.size).cardinality
     ),
     ("recursive tree", "deterministic"): lambda T, U: float(T == U),
     ("recursive tree", "uniform"): lambda T, _: float(
-        1 / RecursiveTrees(T.number_of_vertices).cardinality
+        1 / RecursiveTrees(T.size).cardinality
     ),
     ("recursive tree", "plancherel"): lambda T, _: probability_tree_plancherel(
         T

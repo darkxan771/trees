@@ -8,7 +8,7 @@ from scipy.special import factorial
 from ..abstraction import IntegerPartition
 from ..abstraction import SetPartition
 from ..abstraction.helpers import standardisation
-from ..containers.set_partitions import bell_number
+from ..containers.generating_series import generating_series_SP
 from ..recursive import RecursiveTree
 
 
@@ -43,14 +43,14 @@ def _RSK_P(w: Sequence[int]) -> list:
     return res
 
 
-def set_partition_uniform(L: list[int]) -> SetPartition:
+def set_partition_uniform(L: Sequence[int]) -> SetPartition:
     """
     Generates a random set partition of L with uniform distribution.
     """
-    S = L.copy()
+    S = list(L)
     S.sort()
     n = len(S)
-    bn = bell_number(n)
+    bn = generating_series_SP(n)[-1]
     k = 0
     count = 0
     alea = rand.random()
@@ -66,12 +66,12 @@ def set_partition_uniform(L: list[int]) -> SetPartition:
     return SetPartition(res)
 
 
-def set_partition_ewens(L: list[int], theta: float) -> SetPartition:
+def set_partition_ewens(L: Sequence[int], theta: float) -> SetPartition:
     """
     Generates a random set partition of L with Ewens distribution with
     parameter theta.
     """
-    S = L.copy()
+    S = list(L)
     S.sort()
     n = len(S)
     res = SetPartition([[S[0]]])
@@ -199,7 +199,7 @@ def tree_ewens(n: int, theta: float) -> RecursiveTree:
     """
     T = RecursiveTree(max_size=n)
     T.weight[:n] = np.ones(n, dtype=int)
-    T.size[0] = n
+    T.n[0] = n
     if n > 1:
         L = partition_ewens(n - 1, theta)
         subtrees = [tree_ewens(k, theta) for k in L.parts]
@@ -211,7 +211,7 @@ def tree_ewens(n: int, theta: float) -> RecursiveTree:
             loc_tree = subtrees[i]
             T.parent[perm[c]] = 0
             T.parent[perm[c + 1 : c + k]] = loc_dict[loc_tree.parent[1:k]]
-            T.size[perm[c : c + k]] = loc_tree.size[:k]
+            T.n[perm[c : c + k]] = loc_tree.n[:k]
             T.depth[perm[c : c + k]] = loc_tree.depth[:k] + 1
             c += k
     return T

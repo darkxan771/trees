@@ -2,16 +2,17 @@
 
 from __future__ import annotations
 
-from typing import Any
-from typing import Callable
+from reprlib import Repr
 from typing import Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.special import factorial
 
+from .object import CombinatorialObject
 
-class IntegerPartition:
+
+class IntegerPartition(CombinatorialObject):
     """
     A class for the manipulation of integer partitions.
     """
@@ -28,38 +29,18 @@ class IntegerPartition:
         self.parts = list(int(x) for x in L)
         self.parts
 
-    def __repr__(self):
-        return self.parts.__repr__()
+    def __repr__(self) -> str:
+        return f"Partition {Repr(maxlist=10).repr(self.parts)}"
 
-    def __eq__(self, other):
-        A = isinstance(other, IntegerPartition)
-        return A and self.parts == other.parts
-
-    def __abs__(self):
+    def __abs__(self) -> int:
         return sum(self.parts)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.parts)
 
     @property
-    def convert(self) -> Callable[[str], Any]:
-        from .conversions import conversions
-
-        return lambda S: conversions[("partition", S)](self)
-
-    @property
-    def size(self) -> int:
-        """
-        The size of the integer partition (sum of its parts).
-        """
-        return abs(self)
-
-    @property
-    def length(self) -> int:
-        """
-        The length of the integer partition (number of parts).
-        """
-        return len(self)
+    def category(self) -> str:
+        return "partition"
 
     @property
     def dictionary(self) -> dict[int, int]:

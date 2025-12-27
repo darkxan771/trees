@@ -10,13 +10,15 @@ import pandas as pd
 from ..recursive import RecursiveTree
 from ..rooted import RootedTree
 
+FromTo = tuple[str, str]
+
 
 def recursive_to_code(T: RecursiveTree) -> tuple:
     """
     Returns the code of the recursive tree (list of the nodes of
     attachment).
     """
-    n = T.number_of_vertices
+    n = T.size
     return tuple(T.parent[1:n].tolist())
 
 
@@ -37,7 +39,7 @@ def recursive_to_permutation(T: RecursiveTree) -> tuple:
     the bijection from recursive trees with size n to permutations with
         size n-1.
     """
-    n = T.number_of_vertices
+    n = T.size
     return tuple((code_to_permutation(T.parent[1:n])).tolist())
 
 
@@ -55,7 +57,7 @@ def recursive_to_networkx(T: RecursiveTree) -> nx.classes.digraph.DiGraph:
     """
     Encodes the tree in a NetworkX labelled digraph.
     """
-    n = T.number_of_vertices
+    n = T.size
     C = T.children
     G = nx.DiGraph({i: C[i] for i in range(n)})
     for i in range(n):
@@ -76,12 +78,12 @@ def recursive_to_dataframe(T: RecursiveTree) -> pd.DataFrame:
     """
     Returns the array encoding the recursive tree, as a Pandas dataframe.
     """
-    n = T.number_of_vertices
+    n = T.size
     matrix = np.array(
         [
             T.parent[:n],
             T.weight[:n],
-            T.size[:n],
+            T.n[:n],
             T.depth[:n],
             np.array(T.children, dtype=object),
         ]
@@ -99,7 +101,7 @@ def recursive_to_KP_insertion_array(T: RecursiveTree) -> np.ndarray:
     if not T.is_double_recursive():
         raise ValueError("The tree is not double recursive.")
     else:
-        n = T.number_of_vertices
+        n = T.size
         res = np.zeros((2, n - 1), dtype=int)
         W = T.weights.copy()
         for i in range(1, n):
@@ -109,14 +111,14 @@ def recursive_to_KP_insertion_array(T: RecursiveTree) -> np.ndarray:
         return res
 
 
-conversions: dict[tuple[str, str], Callable] = {}
-conversions[("recursive", "code")] = recursive_to_code
-conversions[("recursive", "permutation")] = recursive_to_permutation
-conversions[("recursive", "networkx")] = recursive_to_networkx
-conversions[("recursive", "rooted")] = recursive_to_rooted
-conversions[("recursive", "recursive")] = lambda T: T
-conversions[("recursive", "dataframe")] = recursive_to_dataframe
-conversions[("recursive", "KP_insertion_array")] = (
+conversions: dict[FromTo, Callable] = {}
+conversions[("recursive tree", "code")] = recursive_to_code
+conversions[("recursive tree", "permutation")] = recursive_to_permutation
+conversions[("recursive tree", "networkx")] = recursive_to_networkx
+conversions[("recursive tree", "rooted tree")] = recursive_to_rooted
+conversions[("recursive tree", "recursive tree")] = lambda T: T
+conversions[("recursive tree", "dataframe")] = recursive_to_dataframe
+conversions[("recursive tree", "KP insertion array")] = (
     recursive_to_KP_insertion_array
 )
 
@@ -177,14 +179,14 @@ def rooted_to_code(T: RootedTree) -> tuple:
 def _insert_rooted_in_recursive_tree(
     T: RootedTree, RT: RecursiveTree, d: int, mini: int, maxi: int
 ) -> None:
-    sizes = [c.size for c in T.subtrees]
+    sizes = [c.n for c in T.subtrees]
     RT.weight[mini] = 1
     RT.depth[mini] = d
-    RT.size[mini] = maxi - mini
+    RT.n[mini] = maxi - mini
     if len(sizes) > 0:
         mini2 = mini + 1
         for c in T.subtrees:
-            maxi2 = mini2 + c.size
+            maxi2 = mini2 + c.n
             RT.parent[mini2] = mini
             _insert_rooted_in_recursive_tree(c, RT, d + 1, mini2, maxi2)
             mini2 = maxi2
@@ -196,8 +198,8 @@ def rooted_to_recursive(T: RootedTree, random: bool = False) -> RecursiveTree:
     labelling which is chosen is uniformly distributed over all
     possibilities.
     """
-    RT = RecursiveTree(max_size=T.size)
-    _insert_rooted_in_recursive_tree(T, RT, 0, 0, T.size)
+    RT = RecursiveTree(max_size=T.n)
+    _insert_rooted_in_recursive_tree(T, RT, 0, 0, T.n)
     if random:
         RT.random_relabelling()
     return RT
@@ -211,15 +213,15 @@ def rooted_to_networkx(T: RootedTree) -> nx.classes.digraph.DiGraph:
     return RT.convert("networkx")
 
 
-conversions[("rooted", "code")] = rooted_to_code
-conversions[("rooted", "rooted")] = lambda T: T
-conversions[("rooted", "recursive")] = rooted_to_recursive
-conversions[("rooted", "networkx")] = rooted_to_networkx
-conversions[("rooted", "nested_list")] = rooted_to_nested_list
+conversions[("rooted tree", "code")] = rooted_to_code
+conversions[("rooted tree", "rooted tree")] = lambda T: T
+conversions[("rooted tree", "recursive tree")] = rooted_to_recursive
+conversions[("rooted tree", "networkx")] = rooted_to_networkx
+conversions[("rooted tree", "nested list")] = rooted_to_nested_list
 
 conversions[("partition", "code")] = lambda P: tuple(P.parts)
-conversions[("partition", "dict")] = lambda P: P.dictionary
-conversions[("set_partition", "code")] = lambda P: tuple(
+conversions[("partition", "dictionary")] = lambda P: P.dictionary
+conversions[("set partition", "code")] = lambda P: tuple(
     tuple(p) for p in P.parts
 )
-conversions[("set_partition", "dict")] = lambda P: P.dict
+conversions[("set partition", "dictionary")] = lambda P: P.dict

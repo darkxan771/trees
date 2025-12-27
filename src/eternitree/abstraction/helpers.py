@@ -3,10 +3,6 @@
 import numpy as np
 
 
-class InfiniteSetError(Exception):
-    pass
-
-
 def standardisation(L: np.ndarray) -> np.ndarray:
     """
     Converts an array of distinct numbers into the corresponding

@@ -6,7 +6,8 @@
 from typing import Self
 
 from ..recursive import RecursiveTree
-from .point_processes import PointProcess, repr
+from .point_processes import PointProcess
+from .point_processes import repr
 
 
 class CrumpJagersModeProcess:
@@ -54,9 +55,9 @@ class CrumpJagersModeProcess:
             or self.tree.birth_processes[x].reaches_time(
                 T - self.tree.birth_times[x]
             )
-            for x in range(self.tree.number_of_vertices)
+            for x in range(self.tree.size)
         ):
-            n = self.tree.number_of_vertices
+            n = self.tree.size
             t, i = self.to_be_computed.pop(0)
             if self.pp.is_increasing:
                 self.tree.add_node(
@@ -86,9 +87,7 @@ class CrumpJagersModeProcess:
         R = self.tree
         if max(self.tree.birth_times.values()) > T:
             over = [
-                k
-                for k in range(self.tree.number_of_vertices)
-                if self.tree.birth_times[k] > T
+                k for k in range(self.tree.size) if self.tree.birth_times[k] > T
             ]
             k = min(over)
             R = R.resize(k)
